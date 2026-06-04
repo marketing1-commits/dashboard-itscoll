@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ItsColl Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:dark}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1121;color:#c8d6e5;min-height:100vh;font-size:13px}
+.top{background:#0f1729;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.top h1{font-size:14px;font-weight:700;color:#fff;letter-spacing:1px}
+.top h1 span{color:#00f0ff;margin-right:6px}
+.top .sub{color:#5a6a7e;font-size:11px;margin-left:6px}
+.top-right{display:flex;align-items:center;gap:12px}
+.sync-btn{background:rgba(0,240,255,.1);border:1px solid rgba(0,240,255,.3);color:#00f0ff;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px}
+.sync-btn:hover{background:rgba(0,240,255,.2)}
+.sync-btn.loading{opacity:.6;cursor:not-allowed}
+.sync-btn .spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.last-updated{font-size:10px;color:#5a6a7e}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.status-dot.ok{background:#10b981}
+.status-dot.err{background:#ef4444}
+.status-dot.loading{background:#f59e0b;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ctrl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ctrl label{font-size:10px;color:#5a6a7e;text-transform:uppercase;letter-spacing:.5px}
+.ctrl select,.ctrl input{background:#1a2332;border:1px solid #2a3a4e;color:#c8d6e5;padding:5px 8px;border-radius:5px;font-size:11px}
+.ctrl input[type=date]{width:120px}
+.ctrl input[type=number]{width:80px}
+.presets{display:flex;gap:4px;flex-wrap:wrap}
+.presets button{background:#1a2332;border:1px solid #2a3a4e;color:#5a6a7e;padding:4px 10px;border-radius:5px;font-size:10px;cursor:pointer;transition:.2s}
+.presets button:hover{border-color:#00f0ff;color:#c8d6e5}
+.presets button.on{background:rgba(0,240,255,.15);border-color:#00f0ff;color:#00f0ff}
+.main{padding:16px 20px}
+.tgt{background:#111b2e;border:1px solid #1e2d42;border-radius:10px;padding:14px 18px;margin-bottom:14px}
+.tgt .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tgt .hd h3{font-size:12px;color:#5a6a7e;text-transform:uppercase;letter-spacing:1px}
+.tgt .hd .pct{font-size:16px;font-weight:700;color:#10b981}
+.tgt .bar{height:8px;background:#1a2a3e;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.tgt .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#00f0ff,#10b981);transition:width .5s}
+.tgt .info{display:flex;justify-content:space-between;font-size:11px;color:#5a6a7e;flex-wrap:wrap;gap:4px}
+.tgt .info .achieved{color:#10b981}
+.tgt .info .gap{color:#f59e0b}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#111b2e;border:1px solid #1e2d42;border-radius:10px;padding:16px}
+.kpi .icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px}
+.kpi .icon.cyan{background:rgba(0,240,255,.12);color:#00f0ff}
+.kpi .icon.green{background:rgba(16,185,129,.12);color:#10b981}
+.kpi .icon.purple{background:rgba(168,85,247,.12);color:#a855f7}
+.kpi .icon.orange{background:rgba(249,115,22,.12);color:#f97316}
+.kpi .icon.pink{background:rgba(236,72,153,.12);color:#ec4899}
+.kpi .icon.blue{background:rgba(59,130,246,.12);color:#3b82f6}
+.kpi .label{font-size:10px;color:#5a6a7e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kpi .val{font-size:22px;font-weight:700;color:#fff}
+.kpi .sub{font-size:11px;color:#5a6a7e;margin-top:3px}
+/* Daily chart — responsive */
+.chart-box{background:#111b2e;border:1px solid #1e2d42;border-radius:10px;padding:16px;margin-bottom:14px}
+.chart-box h3{font-size:12px;color:#5a6a7e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.chart-wrap{width:100%;position:relative;height:180px}
+.chart-wrap canvas{position:absolute;top:0;left:0}
+/* Bottom 3-col grid */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;align-items:stretch}
+.bd{background:#111b2e;border:1px solid #1e2d42;border-radius:10px;padding:14px;min-width:0;display:flex;flex-direction:column}
+.bd h4{font-size:11px;color:#5a6a7e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;flex-shrink:0}
+.bd-body{flex:1;min-height:0}
+/* Channel leaderboard */
+.lb-podium{display:flex;justify-content:space-around;align-items:flex-end;gap:8px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.lb-pod-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.lb-medal{font-size:28px;line-height:1}
+.lb-pod-name{font-size:11px;color:#8899aa;text-align:center}
+.lb-pod-amt{font-size:12px;font-weight:700;color:#fff;text-align:center}
+.lb-rest-list{display:flex;flex-direction:column;gap:6px}
+.lb-rest-row{display:flex;flex-direction:column;gap:3px}
+.lb-rest-top{display:flex;justify-content:space-between;align-items:center}
+.lb-rest-left{display:flex;align-items:center;gap:6px}
+.lb-rest-rank{color:#5a6a7e;font-size:10px;width:14px}
+.lb-rest-name{color:#8899aa;font-size:11px}
+.lb-rest-amt{color:#00f0ff;font-size:11px;font-weight:600}
+.lb-bar-bg{height:4px;background:#1a2a3e;border-radius:2px;overflow:hidden}
+.lb-bar-fill{height:100%;background:linear-gradient(90deg,#00b4ff,#10b981);border-radius:2px}
+/* Pie side-by-side */
+.pie-wrap{display:flex;align-items:center;gap:16px;flex:1}
+.pie-legend{display:flex;flex-direction:column;gap:12px;flex:1}
+.pie-leg-row{display:flex;align-items:flex-start;gap:8px}
+.pie-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.pie-leg-name{font-size:10px;color:#8899aa;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.pie-leg-val{font-size:13px;color:#fff;font-weight:700}
+.pie-leg-pct{font-size:11px;color:#5a6a7e;font-weight:400;margin-left:4px}
+/* State chart fills its container */
+.state-wrap{flex:1;min-height:200px;position:relative}
+.state-wrap canvas{position:absolute;top:0;left:0}
+/* Score cards */
+.sc{background:#0f1729;border:1px solid #1e2d42;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.sc-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:4px}
+.sc-label{font-size:10px;color:#5a6a7e;text-transform:uppercase;letter-spacing:.5px}
+.sc-val{font-size:20px;font-weight:700;color:#fff}
+.err-banner{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#fca5a5;display:none}
+/* Responsive */
+@media(max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .bottom-grid{grid-template-columns:1fr}
+  .pie-wrap{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:500px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .top h1 .sub{display:none}
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <div style="display:flex;align-items:center">
+    <h1><span>⬡</span> ITSCOLL COMMAND CENTER</h1>
+    <span class="sub">· ANALYTICS DASHBOARD</span>
+  </div>
+  <div class="top-right">
+    <span class="last-updated" id="lastUpdated"><span class="status-dot loading" id="statusDot"></span>Loading...</span>
+    <button class="sync-btn" id="syncBtn" onclick="fetchData(true)">↻ Sync</button>
+  </div>
+</div>
+<div class="main">
+  <div class="err-banner" id="errBanner"></div>
+  <div class="ctrl" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+    <div><label>Project</label><br><select id="ps"><option value="all">All Projects</option><option value="fg">FlexiGlo</option><option value="omy">Oxy MY</option><option value="osg">Oxy SG</option><option value="oxy">Oxy Total</option></select></div>
+    <div><label>From</label><br><input type="date" id="df"></div>
+    <div><label>To</label><br><input type="date" id="dt"></div>
+    <div><label>Target (RM)</label><br><input type="number" id="tgtIn" value="410000"></div>
+    <div class="presets">
+      <button class="dp" data-p="today">Today</button>
+      <button class="dp" data-p="yesterday">Yesterday</button>
+      <button class="dp" data-p="7d">Last 7d</button>
+      <button class="dp" data-p="thisWeek">This Week</button>
+      <button class="dp on" data-p="thisMonth">This Month</button>
+      <button class="dp" data-p="lastMonth">Last Month</button>
+      <button class="dp" data-p="q2">Q2</button>
+      <button class="dp" data-p="ytd">YTD</button>
+    </div>
+  </div>
+  <div class="tgt">
+    <div class="hd"><h3 id="tgtTitle">TARGET</h3><div class="pct" id="tgtPct">0%</div></div>
+    <div class="bar"><div class="fill" id="tgtFill" style="width:0%"></div></div>
+    <div class="info">
+      <span>Achieved: <b id="tgtAch">RM0.00</b> / <span id="tgtOf">RM0</span></span>
+      <span class="gap">Gap: <b id="tgtGap">RM0.00</b></span>
+      <span class="achieved" id="tgtStatus"></span>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="icon cyan">$</div><div class="label">Sales</div><div class="val" id="k1">—</div><div class="sub" id="k1s"></div></div>
+    <div class="kpi"><div class="icon purple">⟡</div><div class="label">Ads Spent (incl. SST)</div><div class="val" id="k2">—</div><div class="sub" id="k2s"></div></div>
+    <div class="kpi"><div class="icon green">↗</div><div class="label">ROAS</div><div class="val" id="k3">—</div><div class="sub" id="k3s">Sales / (Spend × 1.16)</div></div>
+    <div class="kpi"><div class="icon orange">◎</div><div class="label">AOV</div><div class="val" id="k4">—</div><div class="sub" id="k4s">Per Order</div></div>
+    <div class="kpi"><div class="icon pink">●</div><div class="label">Cost / Msg</div><div class="val" id="k5">—</div><div class="sub" id="k5s">Per Message</div></div>
+    <div class="kpi"><div class="icon blue">%</div><div class="label">CVR</div><div class="val" id="k6">—</div><div class="sub" id="k6s">Orders / Msgs</div></div>
+    <div class="kpi"><div class="icon cyan">✉</div><div class="label">Total Messages</div><div class="val" id="scMsg">—</div><div class="sub">Inquiries</div></div>
+    <div class="kpi"><div class="icon green">◈</div><div class="label">Total Orders</div><div class="val" id="scOrd">—</div><div class="sub">All Channels</div></div>
+  </div>
+  <div class="chart-box"><h3 id="chartTitle">Daily Sales Trend</h3><div class="chart-wrap"><canvas id="dc" height="160"></canvas></div></div>
+  <div class="bottom-grid">
+    <div class="bd area-ch"><h4>Channel Ranking</h4><div class="bd-body" id="bCh"></div></div>
+    <div class="bd area-ct"><h4>Customer Type</h4><div class="pie-wrap"><canvas id="pieChart" width="180" height="180"></canvas><div id="pieLegend" class="pie-legend"></div></div></div>
+    <div class="bd area-st"><h4>Sales by State</h4><div class="state-wrap"><canvas id="stateChart" width="340" height="300"></canvas></div></div>
+  </div>
+</div>
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx76eW1Lfub6EgdiEXdKRBflXNEwQZfu9uPdpC-nGp_Kpi9Ei9s3YLSHsJN8vSd2Vne/exec';
+const SST = 1.16;
+const TGTS = {fg:150000, omy:360000, osg:50000, oxy:410000, all:560000};
+
+// ─── LOCAL DATE HELPER ────────────────────────────────────────────────────────
+// Always use local date (MYT) — never toISOString() which shifts to UTC
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function todayLocal() { return new Date(); }
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let RAW = { fg:[], omy:[], osg:[], ads:{ fg:{}, omy:{}, osg:{} } };
+// IDX: pre-parsed index built once after fetch, used by agg() for fast filtering
+// IDX[proj] = array of {ts, date, amount, channel, state, custType}
+// IDX_ADS[proj] = array of {ts, spend, spendSST, msgs}
+let IDX = { fg:[], omy:[], osg:[] };
+let IDX_ADS = { fg:[], omy:[], osg:[] };
+
+function buildIndex() {
+  ['fg','omy','osg'].forEach(k => {
+    IDX[k] = (RAW[k] || []).map(r => ({
+      ts:       dateStrToTs(r.date),
+      date:     r.date,
+      amount:   parseFloat(r.amount) || 0,
+      channel:  r.channel  || 'Unknown',
+      state:    r.state    || 'Unknown',
+      custType: r.custType || 'Unknown',
+    })).filter(r => r.ts > 0);
+
+    const adsData = RAW.ads[k];
+    IDX_ADS[k] = (adsData && Array.isArray(adsData.daily) ? adsData.daily : []).map(e => ({
+      ts:       dateStrToTs(e.date),
+      spend:    parseFloat(e.spend)    || 0,
+      spendSST: parseFloat(e.spendSST) || 0,
+      msgs:     parseInt(e.msgs)       || 0,
+    })).filter(r => r.ts > 0);
+  });
+}
+
+// Convert "YYYY-MM-DD" → numeric timestamp once, reuse forever
+function dateStrToTs(s) {
+  if (!s || s.length < 10) return 0;
+  // Parse manually — avoids timezone issues with new Date("YYYY-MM-DD")
+  const y = +s.slice(0,4), m = +s.slice(5,7)-1, d = +s.slice(8,10);
+  return new Date(y, m, d).getTime();
+}
+
+// ─── LOCAL STORAGE CACHE ─────────────────────────────────────────────────────
+const LS_KEY = 'itscoll_data';
+const LS_TTL = 5 * 60 * 1000; // 5 min
+
+function saveLocal(json) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ts:Date.now(), data:json})); } catch(e) {}
+}
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const {ts, data} = JSON.parse(raw);
+    return (Date.now() - ts < LS_TTL) ? data : null;
+  } catch(e) { return null; }
+}
+function applyData(json) {
+  RAW.fg  = json.fg  || [];
+  RAW.omy = json.omy || [];
+  RAW.osg = json.osg || [];
+  if (json.ads) {
+    RAW.ads.fg  = json.ads.fg  || {};
+    RAW.ads.omy = json.ads.omy || {};
+    RAW.ads.osg = json.ads.osg || {};
+  }
+  buildIndex(); // pre-parse all dates once
+}
+
+// ─── FETCH ───────────────────────────────────────────────────────────────────
+async function fetchData(force = false) {
+  const btn = $('syncBtn');
+  const lu  = $('lastUpdated');
+
+  // Show cached data immediately while background-fetching
+  if (!force) {
+    const local = loadLocal();
+    if (local) {
+      applyData(local);
+      render();
+      const stored = JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+      const ago = stored.ts ? Math.round((Date.now()-stored.ts)/1000) : 0;
+      lu.innerHTML = '<span class="status-dot ok"></span>Cached ('+(ago<60?ago+'s':Math.round(ago/60)+'m')+' ago) — syncing…';
+    }
+  }
+
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="spin">↻</span> Syncing…';
+  if (!lu.innerHTML.includes('Cached')) {
+    lu.innerHTML = '<span class="status-dot loading"></span>Fetching…';
+  }
+
+  // ?refresh=1 bypasses Apps Script CacheService on manual sync
+  const url = WEB_APP_URL + (force ? '?refresh=1' : '');
+
+  try {
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    applyData(json);
+    saveLocal(json);
+    const now = new Date().toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit'});
+    lu.innerHTML = '<span class="status-dot ok"></span>Updated ' + now;
+    $('errBanner').style.display = 'none';
+    render();
+  } catch(e) {
+    lu.innerHTML = '<span class="status-dot err"></span>Sync failed';
+    showErr('Fetch failed: ' + e.message + (RAW.fg.length ? ' — showing cached data.' : ''));
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML = '↻ Sync';
+  }
+}
+
+function showErr(msg) {
+  const b = $('errBanner');
+  b.textContent = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function fRM(v) { return 'RM' + v.toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}) }
+function pKeys(p) { return p==='all'?['fg','omy','osg']:p==='oxy'?['omy','osg']:[p] }
+
+// ─── AGGREGATION (uses pre-built index — no date parsing on every call) ───────
+function agg() {
+  const proj    = $('ps').value;
+  const fromStr = $('df').value;
+  const toStr   = $('dt').value;
+  const tgt     = parseFloat($('tgtIn').value) || 0;
+  const keys    = pKeys(proj);
+
+  if (!fromStr || !toStr) return {sales:0,orders:0,spend:0,spendSST:0,msgs:0,ch:{},st:{},ct:{},daily:{},tgt,proj};
+
+  const fromTs = dateStrToTs(fromStr);
+  const toTs   = dateStrToTs(toStr);
+
+  let sales=0, orders=0, spend=0, spendSST=0, msgs=0;
+  let ch={}, st={}, ct={}, daily={};
+
+  keys.forEach(k => {
+    // ── Orders ──
+    for (const r of IDX[k]) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      sales += r.amount;
+      orders++;
+      daily[r.date]  = (daily[r.date]  || 0) + r.amount;
+      ch[r.channel]  = (ch[r.channel]  || 0) + r.amount;  // sales by channel
+      st[r.state]    = (st[r.state]    || 0) + r.amount;  // sales by state
+      ct[r.custType] = (ct[r.custType] || 0) + 1;         // order count by custType
+      if (!ctSales[r.custType]) ctSales[r.custType] = 0;
+      ctSales[r.custType] += r.amount;                      // sales by custType
+    }
+    // ── Ads ──
+    for (const r of IDX_ADS[k]) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      spend    += r.spend;
+      spendSST += r.spendSST;
+      msgs     += r.msgs;
+    }
+  });
+
+  return {sales, orders, spend, spendSST, msgs, ch, st, ct, daily, tgt, proj};
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+let chart = null, pieChart = null, stateChart = null;
+let ctSales = {}; // module-level so pie tooltip closure can access it
+function fRMK(v) {
+  if (v >= 1000000) return 'RM'+(v/1000000).toFixed(1)+'M';
+  if (v >= 1000) return 'RM'+(v/1000).toFixed(0)+'K';
+  return fRM(v);
+}
+function render() {
+  const d = agg();
+
+  // KPIs
+  $('k1').textContent = fRM(d.sales);
+  $('k1s').textContent = d.orders + ' orders';
+  if($('scMsg')) $('scMsg').textContent = d.msgs.toLocaleString();
+  if($('scOrd')) $('scOrd').textContent = d.orders.toLocaleString();
+
+  // Ads: show SST-inclusive spend, but Cost/Msg and ROAS use raw spend
+  const displaySpend = d.spendSST > 0 ? d.spendSST : d.spend * SST;
+  $('k2').textContent = displaySpend > 0 ? fRM(displaySpend) : 'RM0.00';
+  $('k2s').textContent = d.msgs + ' msgs';
+
+  const roas = d.spend > 0 ? d.sales / (d.spend * SST) : 0;
+  $('k3').textContent = d.spend > 0 ? roas.toFixed(2) + 'x' : '—';
+
+  const aov = d.orders > 0 ? d.sales / d.orders : 0;
+  $('k4').textContent = fRM(aov);
+
+  const cpm = d.msgs > 0 ? d.spend / d.msgs : 0;
+  $('k5').textContent = d.msgs > 0 ? fRM(cpm) : '—';
+
+  const cvr = d.msgs > 0 ? d.orders / d.msgs * 100 : 0;
+  $('k6').textContent = d.msgs > 0 ? cvr.toFixed(1) + '%' : '—';
+
+  // Target
+  const pct = d.tgt > 0 ? (d.sales / d.tgt * 100) : 0;
+  const gap = Math.max(0, d.tgt - d.sales);
+  const projName = {all:'ALL PROJECTS', fg:'FLEXIGLO', omy:'OXY MY', osg:'OXY SG', oxy:'OXY TOTAL'}[d.proj];
+  $('tgtTitle').textContent = 'TARGET — ' + projName;
+  $('tgtPct').textContent = pct.toFixed(1) + '%';
+  $('tgtPct').style.color = pct >= 100 ? '#10b981' : '#f59e0b';
+  $('tgtFill').style.width = Math.min(pct, 100) + '%';
+  $('tgtAch').textContent = fRM(d.sales);
+  $('tgtOf').textContent  = fRM(d.tgt);
+  $('tgtGap').textContent = fRM(gap);
+  $('tgtStatus').textContent = pct >= 100 ? '✓ Achieved' : '';
+
+
+
+  // ── Channel Leaderboard — podium for top 3, list for rest ──
+  const chSorted = Object.entries(d.ch).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const chMax = chSorted[0]?.[1] || 1;
+  const medals = ['🥇','🥈','🥉'];
+  const top3 = chSorted.slice(0,3);
+  const rest = chSorted.slice(3);
+  // Podium order: silver(2nd), gold(1st), bronze(3rd)
+  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+  let lbHtml = '<div class="lb-podium">';
+  podiumOrder.forEach(item => {
+    const rank = top3.indexOf(item);
+    lbHtml += `<div class="lb-pod-item"><div class="lb-medal">${medals[rank]}</div><div class="lb-pod-name">${item[0]}</div><div class="lb-pod-amt">${fRM(item[1])}</div></div>`;
+  });
+  lbHtml += '</div>';
+  if (rest.length) {
+    lbHtml += '<div class="lb-rest-list">';
+    rest.forEach((item,i) => {
+      const pct = (item[1]/chMax*100).toFixed(1);
+      lbHtml += `<div class="lb-rest-row">
+        <div class="lb-rest-top"><div class="lb-rest-left"><span class="lb-rest-rank">${i+4}</span><span class="lb-rest-name">${item[0]}</span></div><span class="lb-rest-amt">${fRM(item[1])}</span></div>
+        <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    lbHtml += '</div>';
+  }
+  $('bCh').innerHTML = chSorted.length ? lbHtml : '<div style="color:#5a6a7e;font-size:11px">No data</div>';
+
+  // ── Customer Type Pie — left chart, right legend, tooltip shows sales ──
+  const ctEntries = Object.entries(d.ct).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const total = ctEntries.reduce((a,[,v])=>a+v,0);
+  // Also compute sales by custType for tooltip
+  ctSales = {};
+  const keys2 = pKeys($('ps').value);
+  keys2.forEach(k => {
+    for(const r of IDX[k]) {
+      if(r.ts < dateStrToTs($('df').value) || r.ts > dateStrToTs($('dt').value)) continue;
+      ctSales[r.custType] = (ctSales[r.custType]||0) + r.amount;
+    }
+  });
+  const pieColors = ['#10b981','#00f0ff','#a855f7','#f97316'];
+  if (pieChart) { pieChart.destroy(); pieChart = null; }
+  pieChart = new Chart($('pieChart').getContext('2d'), {
+    type: 'pie',
+    data: {
+      labels: ctEntries.map(([k])=>k),
+      datasets:[{ data: ctEntries.map(([,v])=>v), backgroundColor: pieColors.slice(0,ctEntries.length), borderWidth:2, borderColor:'#111b2e' }]
+    },
+    options:{
+      responsive:false, animation:false,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label: ctx => {
+          const name = ctx.label;
+          const orders = ctx.parsed;
+          const sales = ctSales[name]||0;
+          const pct = total>0?(orders/total*100).toFixed(1):0;
+          return [`${name}: ${orders} orders (${pct}%)`, `Sales: ${fRM(sales)}`];
+        }}}
+      }
+    }
+  });
+  let legendHtml = '';
+  ctEntries.forEach(([k,v],i) => {
+    legendHtml += `<div class="pie-leg-row"><span class="pie-dot" style="background:${pieColors[i]||'#888'}"></span><div><div class="pie-leg-name">${k}</div><div class="pie-leg-val">${v} orders<span class="pie-leg-pct">(${total>0?(v/total*100).toFixed(1):0}%)</span></div></div></div>`;
+  });
+  $('pieLegend').innerHTML = legendHtml;
+
+  // ── State Horizontal Bar — responsive, fills container ──
+  const stSorted = Object.entries(d.st).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const stH = Math.max(260, stSorted.length * 26 + 40);
+  const stW = $('stateChart').parentElement.offsetWidth || 340;
+  $('stateChart').width  = stW;
+  $('stateChart').height = stH;
+  if (stateChart) {
+    stateChart.data.labels = stSorted.map(([k])=>k);
+    stateChart.data.datasets[0].data = stSorted.map(([,v])=>v);
+    stateChart.update('none');
+  } else {
+    stateChart = new Chart($('stateChart').getContext('2d'), {
+      type:'bar',
+      data:{
+        labels: stSorted.map(([k])=>k),
+        datasets:[{ data: stSorted.map(([,v])=>v), backgroundColor:'rgba(0,180,255,0.5)', borderColor:'rgba(0,180,255,0.9)', borderWidth:1, borderRadius:3 }]
+      },
+      options:{
+        responsive:false, animation:false, indexAxis:'y',
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>' '+fRM(ctx.parsed.x) } } },
+        scales:{
+          x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4a5a6e',font:{size:9}, callback:v=>v>=1000?'RM'+(v/1000).toFixed(0)+'K':'RM'+v} },
+          y:{ grid:{display:false}, ticks:{color:'#8899aa',font:{size:9}} }
+        }
+      }
+    });
+  }
+
+  // ── Daily/Monthly Sales Chart — responsive ──
+  const sortedDays = Object.keys(d.daily).sort();
+  const dayCount = sortedDays.length;
+  const useMonthly = dayCount > 45;
+  let labels, vals;
+  if (useMonthly) {
+    const monthly = {};
+    sortedDays.forEach(k => { const ym=k.slice(0,7); monthly[ym]=(monthly[ym]||0)+(d.daily[k]||0); });
+    const sortedMonths = Object.keys(monthly).sort();
+    labels = sortedMonths.map(ym => { const [y,m]=ym.split('-'); return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m]+' '+y.slice(2); });
+    vals = sortedMonths.map(ym => monthly[ym]);
+  } else {
+    labels = sortedDays.map(k => k.slice(5));
+    vals   = sortedDays.map(k => d.daily[k]||0);
+  }
+  $('chartTitle').textContent = useMonthly ? 'Monthly Sales Trend' : 'Daily Sales Trend';
+  const dcEl = $('dc');
+  const dcW  = dcEl.parentElement.offsetWidth || 900;
+  dcEl.width  = dcW;
+  dcEl.height = 160;
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = vals;
+    chart.update('none');
+  } else {
+    chart = new Chart(dcEl.getContext('2d'), {
+      type:'bar',
+      data:{ labels, datasets:[{ data:vals, backgroundColor:'rgba(0,180,255,0.5)', borderColor:'rgba(0,180,255,0.9)', borderWidth:1, borderRadius:3, barPercentage:useMonthly?0.5:0.7 }] },
+      options:{
+        responsive:false, animation:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4a5a6e',font:{size:9},maxRotation:45} },
+          y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4a5a6e',font:{size:9}, callback:v=>v>=1000?'RM'+(v/1000).toFixed(0)+'K':'RM'+v} }
+        }
+      }
+    });
+  }
+}
+
+// ─── DATE PRESETS ─────────────────────────────────────────────────────────────
+// Debounce — prevents rapid re-renders when user is typing into date inputs
+let _renderTimer = null;
+function debouncedRender() {
+  clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(render, 80);
+}
+
+function setRange(p, btn) {
+  const t=todayLocal(), y=t.getFullYear(), m=t.getMonth(), d=t.getDate();
+  let s, e;
+  switch(p){
+    case 'today':     s=e=new Date(y,m,d); break;
+    case 'yesterday': s=e=new Date(y,m,d-1); break;
+    case '7d':        s=new Date(y,m,d-6); e=new Date(y,m,d); break;
+    case 'thisWeek':  { const w=t.getDay()||7; s=new Date(y,m,d-w+1); e=new Date(y,m,d); } break;
+    case 'thisMonth': s=new Date(y,m,1); e=new Date(y,m,d); break;
+    case 'lastMonth': s=new Date(y,m-1,1); e=new Date(y,m,0); break;
+    case 'q2':        s=new Date(y,3,1); e=new Date(y,m,d); break;
+    case 'ytd':       s=new Date(y,0,1); e=new Date(y,m,d); break;
+  }
+  $('df').value = localDateStr(s);
+  $('dt').value = localDateStr(e);
+  document.querySelectorAll('.dp').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  render(); // immediate for button clicks
+}
+
+function updateTarget() {
+  const p = $('ps').value;
+  $('tgtIn').value = TGTS[p] || 560000;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.dp').forEach(b => {
+  b.addEventListener('click', e => setRange(b.dataset.p, b));
+});
+$('ps').addEventListener('change', () => { updateTarget(); render(); });
+$('df').addEventListener('change', debouncedRender);
+$('dt').addEventListener('change', debouncedRender);
+$('tgtIn').addEventListener('change', debouncedRender);
+
+// Set initial date range to this month (using local date, not UTC)
+(function init() {
+  const t = todayLocal(), y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
+  $('df').value = localDateStr(new Date(y,m,1));
+  $('dt').value = localDateStr(new Date(y,m,d));
+  updateTarget();
+  fetchData(); // auto-fetch on load
+})();
+</script>
+</body>
+</html>
