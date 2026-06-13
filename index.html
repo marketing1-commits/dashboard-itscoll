@@ -97,6 +97,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .bottom-grid{grid-template-columns:1fr}
   .pie-wrap{flex-direction:row;align-items:center}
 }
+/* Dashboard Tabs */
+.tabs{display:flex;gap:0;background:#FFF3E0;border-bottom:2px solid #E8D5B0;padding:0 20px}
+.tab-btn{padding:10px 20px;font-size:12px;font-weight:600;color:#A07850;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;text-transform:uppercase;letter-spacing:.5px}
+.tab-btn:hover{color:#3D2B1F}
+.tab-btn.active{color:#F5A800;border-bottom-color:#F5A800;background:#FFFFFF}
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* CRM Dashboard Styles */
+.crm-main{padding:16px 20px}
+.crm-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.crm-kpi{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.crm-kpi .icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px}
+.crm-kpi .label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.crm-kpi .val{font-size:22px;font-weight:700;color:#3D2B1F}
+.crm-kpi .sub{font-size:11px;color:#A07850;margin-top:3px}
+.crm-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.crm-card{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.crm-card h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.crm-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.crm-bar-label{width:80px;font-size:11px;color:#5C4033;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crm-bar-track{flex:1;background:#F5E6C8;border-radius:4px;height:16px;overflow:hidden}
+.crm-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;min-width:20px}
+.crm-bar-fill span{font-size:10px;color:white;font-weight:700}
+.crm-table{width:100%;border-collapse:collapse;font-size:12px}
+.crm-table th{padding:8px;text-align:left;color:#A07850;font-weight:600;border-bottom:2px solid #F0E6D3}
+.crm-table td{padding:8px;border-bottom:1px solid #F5EDE3}
+@media(max-width:900px){.crm-kpis{grid-template-columns:repeat(2,1fr)}.crm-charts{grid-template-columns:1fr}}
 @media(max-width:500px){
   .kpis{grid-template-columns:1fr 1fr}
   .top h1 .sub{display:none}
@@ -114,6 +141,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="sync-btn" id="syncBtn" onclick="fetchData(true)">↻ Sync</button>
   </div>
 </div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('sales')">📊 Sales Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('crm')">👥 CRM Dashboard</button>
+</div>
+<div id="salesTab" class="tab-content active">
 <div class="main">
   <div class="err-banner" id="errBanner"></div>
   <div class="ctrl" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
@@ -167,6 +199,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="bd area-st"><h4>Sales by State</h4><div class="state-wrap" id="stateWrap"><canvas id="stateChart"></canvas></div></div>
   </div>
 </div>
+</div><!-- end salesTab -->
+
+<div id="crmTab" class="tab-content">
+<div class="crm-main">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div>
+      <h2 style="font-size:16px;color:#3D2B1F;margin:0;font-weight:700">👥 CRM — Customer Retention Dashboard</h2>
+      <p style="font-size:10px;color:#A07850;margin:4px 0 0" id="crmUpdated">Loading...</p>
+    </div>
+    <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
+  </div>
+  <div class="crm-kpis" id="crmKpis">
+    <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">👥</div><div class="label">Total Customers</div><div class="val" id="crmTotal">—</div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(16,185,129,.12);color:#10b981">🟢</div><div class="label">Active</div><div class="val" id="crmActive">—</div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(245,168,0,.12);color:#F5A800">🔄</div><div class="label">Repeat Rate</div><div class="val" id="crmRepeat">—</div><div class="sub" id="crmRepeatSub"></div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(249,115,22,.12);color:#f97316">⚠️</div><div class="label">At-Risk</div><div class="val" id="crmRisk">—</div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(239,68,68,.12);color:#ef4444">❌</div><div class="label">Churned</div><div class="val" id="crmChurned">—</div></div>
+  </div>
+  <div class="crm-kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="crm-kpi"><div class="icon" style="background:rgba(245,168,0,.12);color:#F5A800">💰</div><div class="label">Total Lifetime Revenue</div><div class="val" id="crmRevenue">—</div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(168,85,247,.12);color:#a855f7">📋</div><div class="label">Avg Customer Value</div><div class="val" id="crmACV">—</div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">📅</div><div class="label">Today's Actions</div><div class="val" id="crmActions">—</div></div>
+  </div>
+  <div class="crm-charts">
+    <div class="crm-card"><h4>🏆 Tier Distribution</h4><div style="display:flex;align-items:center;gap:20px"><canvas id="crmTierChart" width="160" height="160"></canvas><div id="crmTierLegend"></div></div></div>
+    <div class="crm-card"><h4>🔄 Journey Stages</h4><div style="display:flex;align-items:center;gap:20px"><canvas id="crmJourneyChart" width="160" height="160"></canvas><div id="crmJourneyLegend"></div></div></div>
+  </div>
+  <div class="crm-charts">
+    <div class="crm-card"><h4>📢 Channel Distribution</h4><div id="crmChannelBars"></div></div>
+    <div class="crm-card"><h4>📍 State Distribution</h4><div id="crmStateBars"></div></div>
+  </div>
+  <div class="crm-card" style="margin-bottom:14px"><h4>🌟 Top 10 Customers by Lifetime Value</h4>
+    <table class="crm-table">
+      <thead><tr><th>#</th><th>Customer</th><th style="text-align:right">Orders</th><th style="text-align:right">Total Spent</th><th>Tier</th></tr></thead>
+      <tbody id="crmTopTable"></tbody>
+    </table>
+  </div>
+  <div class="crm-card"><h4>🗺️ Detailed Journey Stages</h4><div id="crmJourneyBars"></div></div>
+</div>
+</div><!-- end crmTab -->
+
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw8frQq4ShdSfPBy1HLysuAluT1H5zGYF7OyFEMZsximP14ViRKzueXN8kRH2ds7UEi/exec';
@@ -610,6 +683,90 @@ $('tgtIn').addEventListener('change', debouncedRender);
   updateTarget();
   fetchData(); // auto-fetch on load
 })();
+
+// ─── TAB SWITCHING ───────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tab + 'Tab').classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'crm' && !window._crmLoaded) loadCRM();
+}
+
+// ─── CRM DASHBOARD ──────────────────────────────────────────
+const CRM_API = 'https://script.google.com/macros/s/AKfycbwT4aFsvIjZQm0y8VSek0ZfG3g53ZsHK_AgfFQr0amWjb5w2AZkgWgiGpl5QY2mRrtT/exec';
+let crmTierChart, crmJourneyChart;
+
+async function loadCRM() {
+  try {
+    const res = await fetch(CRM_API + '?action=kpi');
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    window._crmLoaded = true;
+    renderCRM(d);
+  } catch(e) {
+    document.getElementById('crmUpdated').textContent = 'Error: ' + e.message;
+  }
+}
+
+function renderCRM(d) {
+  const o = d.overview;
+  document.getElementById('crmUpdated').textContent = 'Last updated: ' + d.lastUpdated;
+  document.getElementById('crmTotal').textContent = o.totalCustomers.toLocaleString();
+  document.getElementById('crmActive').textContent = o.activeCustomers.toLocaleString();
+  document.getElementById('crmRepeat').textContent = o.repeatRate + '%';
+  document.getElementById('crmRepeatSub').textContent = o.repeatCustomers + ' customers';
+  document.getElementById('crmRisk').textContent = o.atRiskCustomers.toLocaleString();
+  document.getElementById('crmChurned').textContent = o.churnedCustomers.toLocaleString();
+  document.getElementById('crmRevenue').textContent = 'RM ' + o.totalRevenue.toLocaleString();
+  document.getElementById('crmACV').textContent = 'RM ' + o.avgCustomerValue.toLocaleString();
+  document.getElementById('crmActions').textContent = o.todayActions;
+  const tierColors = {Bronze:'#CD7F32',Silver:'#A8A9AD',Gold:'#D4951B',Platinum:'#7B68EE',Diamond:'#FF6B6B'};
+  const tierData = d.tierDistribution;
+  const tierLabels = Object.keys(tierData);
+  if (crmTierChart) crmTierChart.destroy();
+  crmTierChart = new Chart(document.getElementById('crmTierChart'), {
+    type:'doughnut', data:{labels:tierLabels,datasets:[{data:tierLabels.map(k=>tierData[k]),backgroundColor:tierLabels.map(k=>tierColors[k]||'#CCC'),borderWidth:2}]},
+    options:{responsive:false,plugins:{legend:{display:false}},cutout:'55%'}
+  });
+  document.getElementById('crmTierLegend').innerHTML = tierLabels.filter(k=>tierData[k]>0).map(k=>
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><div style="width:12px;height:12px;border-radius:3px;background:'+tierColors[k]+'"></div><span style="font-size:11px;color:#5C4033">'+k+'</span><b style="font-size:12px;color:#3D2B1F">'+tierData[k]+'</b><span style="font-size:10px;color:#A07850">('+Math.round(tierData[k]/o.totalCustomers*100)+'%)</span></div>'
+  ).join('');
+  const journeyGroups = {'New':0,'Active':0,'At-Risk':0,'Churned':0};
+  Object.entries(d.journeyStages||{}).forEach(function(e){
+    var s=e[0],c=e[1];
+    if(s==='ACTIVE') journeyGroups['Active']+=c;
+    else if(s==='AT-RISK') journeyGroups['At-Risk']+=c;
+    else if(s==='CHURNED') journeyGroups['Churned']+=c;
+    else journeyGroups['New']+=c;
+  });
+  const jColors = {'New':'#3498DB','Active':'#27AE60','At-Risk':'#F39C12','Churned':'#E74C3C'};
+  const jLabels = Object.keys(journeyGroups);
+  if (crmJourneyChart) crmJourneyChart.destroy();
+  crmJourneyChart = new Chart(document.getElementById('crmJourneyChart'), {
+    type:'doughnut', data:{labels:jLabels,datasets:[{data:jLabels.map(k=>journeyGroups[k]),backgroundColor:jLabels.map(k=>jColors[k]),borderWidth:2}]},
+    options:{responsive:false,plugins:{legend:{display:false}},cutout:'55%'}
+  });
+  document.getElementById('crmJourneyLegend').innerHTML = jLabels.filter(k=>journeyGroups[k]>0).map(k=>
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><div style="width:12px;height:12px;border-radius:3px;background:'+jColors[k]+'"></div><span style="font-size:11px;color:#5C4033">'+k+'</span><b style="font-size:12px;color:#3D2B1F">'+journeyGroups[k]+'</b></div>'
+  ).join('');
+  renderBars('crmChannelBars', d.channelDistribution, '#F5A800', 8);
+  renderBars('crmStateBars', d.stateDistribution, '#3b82f6', 10);
+  renderBars('crmJourneyBars', d.journeyStages, '#27AE60', 15);
+  document.getElementById('crmTopTable').innerHTML = (d.topCustomers||[]).map(function(c,i){
+    return '<tr><td style="color:#A07850">'+(i+1)+'</td><td style="font-weight:600;color:#3D2B1F">'+c.name+'</td><td style="text-align:right;color:#5C4033">'+c.orders+'</td><td style="text-align:right;font-weight:700;color:#F5A800">RM '+c.spent.toLocaleString()+'</td><td style="font-size:11px">'+c.tier+'</td></tr>';
+  }).join('');
+}
+
+function renderBars(containerId, data, color, max) {
+  var entries = Object.entries(data||{}).sort(function(a,b){return b[1]-a[1]}).slice(0,max);
+  var maxVal = Math.max.apply(null, entries.map(function(e){return e[1]}));
+  if(maxVal<1) maxVal=1;
+  document.getElementById(containerId).innerHTML = entries.map(function(e){
+    var k=e[0],v=e[1];
+    return '<div class="crm-bar"><div class="crm-bar-label">'+k+'</div><div class="crm-bar-track"><div class="crm-bar-fill" style="width:'+Math.round(v/maxVal*100)+'%;background:'+color+'"><span>'+v+'</span></div></div></div>';
+  }).join('');
+}
 </script>
 </body>
 </html>
