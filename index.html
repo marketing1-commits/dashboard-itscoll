@@ -208,7 +208,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <h2 style="font-size:16px;color:#3D2B1F;margin:0;font-weight:700">👥 CRM — Customer Retention Dashboard</h2>
       <p style="font-size:10px;color:#A07850;margin:4px 0 0" id="crmUpdated">Loading...</p>
     </div>
-    <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="crmCountry" onchange="loadCRM()" style="padding:6px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:12px;background:white;color:#3D2B1F;font-weight:600">
+        <option value="">All (MY+SG)</option>
+        <option value="MY">🇲🇾 Oxy MY</option>
+        <option value="SG">🇸🇬 Oxy SG</option>
+      </select>
+      <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
+    </div>
   </div>
   <div class="crm-kpis" id="crmKpis">
     <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">👥</div><div class="label">Total Customers</div><div class="val" id="crmTotal">—</div></div>
@@ -220,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="crm-kpis" style="grid-template-columns:repeat(3,1fr)">
     <div class="crm-kpi"><div class="icon" style="background:rgba(245,168,0,.12);color:#F5A800">💰</div><div class="label">Total Lifetime Revenue</div><div class="val" id="crmRevenue">—</div></div>
     <div class="crm-kpi"><div class="icon" style="background:rgba(168,85,247,.12);color:#a855f7">📋</div><div class="label">Avg Customer Value</div><div class="val" id="crmACV">—</div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">📅</div><div class="label">Today's Actions</div><div class="val" id="crmActions">—</div></div>
+    <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">📅</div><div class="label">Today's Actions</div><div class="val" id="crmActions">—</div><div class="sub" id="crmActionsSub"></div></div>
   </div>
   <div class="crm-charts">
     <div class="crm-card"><h4>🏆 Tier Distribution</h4><div style="display:flex;align-items:center;gap:20px"><canvas id="crmTierChart" width="160" height="160"></canvas><div id="crmTierLegend"></div></div></div>
@@ -699,7 +706,10 @@ let crmTierChart, crmJourneyChart;
 
 async function loadCRM() {
   try {
-    const res = await fetch(CRM_API + '?action=kpi');
+    var country = document.getElementById('crmCountry').value;
+    var url = CRM_API + '?action=kpi';
+    if (country) url += '&country=' + country;
+    const res = await fetch(url);
     const d = await res.json();
     if (d.error) throw new Error(d.error);
     window._crmLoaded = true;
@@ -711,7 +721,8 @@ async function loadCRM() {
 
 function renderCRM(d) {
   const o = d.overview;
-  document.getElementById('crmUpdated').textContent = 'Last updated: ' + d.lastUpdated;
+  var countryLabel = d.country === 'MY' ? '🇲🇾 Oxy MY' : d.country === 'SG' ? '🇸🇬 Oxy SG' : '🌏 All';
+  document.getElementById('crmUpdated').textContent = countryLabel + ' · Last updated: ' + d.lastUpdated;
   document.getElementById('crmTotal').textContent = o.totalCustomers.toLocaleString();
   document.getElementById('crmActive').textContent = o.activeCustomers.toLocaleString();
   document.getElementById('crmRepeat').textContent = o.repeatRate + '%';
@@ -720,7 +731,8 @@ function renderCRM(d) {
   document.getElementById('crmChurned').textContent = o.churnedCustomers.toLocaleString();
   document.getElementById('crmRevenue').textContent = 'RM ' + o.totalRevenue.toLocaleString();
   document.getElementById('crmACV').textContent = 'RM ' + o.avgCustomerValue.toLocaleString();
-  document.getElementById('crmActions').textContent = o.todayActions;
+  document.getElementById('crmActions').textContent = o.todayDone + ' / ' + o.todayActions;
+  document.getElementById('crmActionsSub').textContent = o.todayActions > 0 ? Math.round(o.todayDone / o.todayActions * 100) + '% done' : '';
   const tierColors = {Bronze:'#CD7F32',Silver:'#A8A9AD',Gold:'#D4951B',Platinum:'#7B68EE',Diamond:'#FF6B6B'};
   const tierData = d.tierDistribution;
   const tierLabels = Object.keys(tierData);
