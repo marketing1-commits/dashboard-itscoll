@@ -726,7 +726,7 @@ function renderCRM(d) {
   document.getElementById('crmTotal').textContent = o.totalCustomers.toLocaleString();
   document.getElementById('crmActive').textContent = o.activeCustomers.toLocaleString();
   document.getElementById('crmRepeat').textContent = o.repeatRate + '%';
-  document.getElementById('crmRepeatSub').textContent = o.repeatCustomers + ' / ' + o.eligibleForRepurchase + ' eligible';
+  document.getElementById('crmRepeatSub').textContent = o.repeatOrders + ' / ' + o.totalOrders + ' orders';
   document.getElementById('crmRisk').textContent = o.atRiskCustomers.toLocaleString();
   document.getElementById('crmChurned').textContent = o.churnedCustomers.toLocaleString();
   document.getElementById('crmRevenue').textContent = 'RM ' + o.totalRevenue.toLocaleString();
