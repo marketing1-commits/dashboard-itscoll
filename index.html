@@ -264,7 +264,7 @@ function localDateStr(d) {
 function todayLocal() { return new Date(); }
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
-let RAW = { fg:[], omy:[], osg:[], ads:{ fg:{}, omy:{}, osg:{} } };
+let RAW = { fg:[], mg:[], omy:[], osg:[], ads:{ fg:{}, mg:{}, omy:{}, osg:{} } };
 // IDX: pre-parsed index built once after fetch, used by agg() for fast filtering
 // IDX[proj] = array of {ts, date, amount, channel, state, custType}
 // IDX_ADS[proj] = array of {ts, spend, spendSST, msgs}
@@ -317,10 +317,12 @@ function loadLocal() {
 }
 function applyData(json) {
   RAW.fg  = json.fg  || [];
+  RAW.mg  = json.mg  || [];
   RAW.omy = json.omy || [];
   RAW.osg = json.osg || [];
   if (json.ads) {
     RAW.ads.fg  = json.ads.fg  || {};
+    RAW.ads.mg  = json.ads.mg  || {};
     RAW.ads.omy = json.ads.omy || {};
     RAW.ads.osg = json.ads.osg || {};
   }
