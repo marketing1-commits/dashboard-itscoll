@@ -268,11 +268,11 @@ let RAW = { fg:[], omy:[], osg:[], ads:{ fg:{}, omy:{}, osg:{} } };
 // IDX: pre-parsed index built once after fetch, used by agg() for fast filtering
 // IDX[proj] = array of {ts, date, amount, channel, state, custType}
 // IDX_ADS[proj] = array of {ts, spend, spendSST, msgs}
-let IDX = { fg:[], omy:[], osg:[] };
-let IDX_ADS = { fg:[], omy:[], osg:[] };
+let IDX = { fg:[], mg:[], omy:[], osg:[] };
+let IDX_ADS = { fg:[], mg:[], omy:[], osg:[] };
 
 function buildIndex() {
-  ['fg','omy','osg'].forEach(k => {
+  ['fg','mg','omy','osg'].forEach(k => {
     IDX[k] = (RAW[k] || []).map(r => ({
       ts:       dateStrToTs(r.date),
       date:     r.date,
@@ -401,7 +401,7 @@ function agg() {
 
   keys.forEach(k => {
     // ── Orders ──
-    for (const r of IDX[k]) {
+    for (const r of (IDX[k] || [])) {
       if (r.ts < fromTs || r.ts > toTs) continue;
       sales += r.amount;
       orders++;
@@ -413,7 +413,7 @@ function agg() {
       ctSales[r.custType] += r.amount;                      // sales by custType
     }
     // ── Ads ──
-    for (const r of IDX_ADS[k]) {
+    for (const r of (IDX_ADS[k] || [])) {
       if (r.ts < fromTs || r.ts > toTs) continue;
       spend    += r.spend;
       spendSST += r.spendSST;
@@ -483,7 +483,7 @@ function render() {
     const curMonthTo   = dateStrToTs(localDateStr(new Date(curY, curM, dayOfMonth)));
     let esomSales = 0;
     esomKeys.forEach(k => {
-      for (const r of IDX[k]) {
+      for (const r of (IDX[k] || [])) {
         if (r.ts >= curMonthFrom && r.ts <= curMonthTo) esomSales += r.amount;
       }
     });
@@ -542,7 +542,7 @@ function render() {
   ctSales = {};
   const keys2 = pKeys($('ps').value);
   keys2.forEach(k => {
-    for(const r of IDX[k]) {
+    for(const r of (IDX[k] || [])) {
       if(r.ts < dateStrToTs($('df').value) || r.ts > dateStrToTs($('dt').value)) continue;
       ctSales[r.custType] = (ctSales[r.custType]||0) + r.amount;
     }
