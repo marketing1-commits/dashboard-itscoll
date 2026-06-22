@@ -149,7 +149,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="main">
   <div class="err-banner" id="errBanner"></div>
   <div class="ctrl" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-    <div><label>Project</label><br><select id="ps"><option value="all">All Projects</option><option value="fg">FlexiGlo</option><option value="omy">Oxy MY</option><option value="osg">Oxy SG</option><option value="oxy">Oxy Total</option></select></div>
+    <div><label>Project</label><br><select id="ps"><option value="all">All Projects</option><option value="fg">FlexiGlo</option><option value="mg">Multigrainz</option><option value="omy">Oxy MY</option><option value="osg">Oxy SG</option><option value="oxy">Oxy Total</option></select></div>
     <div><label>From</label><br><input type="date" id="df"></div>
     <div><label>To</label><br><input type="date" id="dt"></div>
     <div><label>Target (RM)</label><br><input type="number" id="tgtIn" value="410000"></div>
@@ -381,7 +381,7 @@ function showErr(msg) {
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 function fRM(v) { return 'RM' + v.toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}) }
-function pKeys(p) { return p==='all'?['fg','omy','osg']:p==='oxy'?['omy','osg']:[p] }
+function pKeys(p) { return p==='all'?['fg','mg','omy','osg']:p==='oxy'?['omy','osg']:[p] }
 
 // ─── AGGREGATION (uses pre-built index — no date parsing on every call) ───────
 function agg() {
@@ -461,7 +461,7 @@ function render() {
   // Target
   const pct = d.tgt > 0 ? (d.sales / d.tgt * 100) : 0;
   const gap = Math.max(0, d.tgt - d.sales);
-  const projName = {all:'ALL PROJECTS', fg:'FLEXIGLO', omy:'OXY MY', osg:'OXY SG', oxy:'OXY TOTAL'}[d.proj];
+  const projName = {all:'ALL PROJECTS', fg:'FLEXIGLO', mg:'MULTIGRAINZ', omy:'OXY MY', osg:'OXY SG', oxy:'OXY TOTAL'}[d.proj];
   $('tgtTitle').textContent = 'TARGET — ' + projName;
   $('tgtPct').textContent = pct.toFixed(1) + '%';
   $('tgtPct').style.color = pct >= 100 ? '#10b981' : '#f59e0b';
