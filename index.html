@@ -1267,11 +1267,13 @@ function renderCRM(d) {
   const trendEl = document.getElementById('trendBars');
   const trendArr = d.monthlyTrend || [];
   if (trendArr.length > 0) {
-    // Scale bars against actual max, but clamp >100% visually to full height + orange
-    const validRates = trendArr.flatMap(m => [m.rate||0, Math.min(m.supplyRate||0, 100)]).filter(v => v > 0);
-    const maxR = validRates.length > 0 ? Math.max(...validRates) : 100;
-    const BAR_H = 44;
-    const legend = '<div style="display:flex;gap:10px;margin-bottom:6px">' +
+    // Find max value for scaling (exclude >100% outliers from scale calc)
+    const r1vals = trendArr.map(m => m.rate || 0);
+    const r2vals = trendArr.map(m => Math.min(m.supplyRate || 0, 100));
+    const maxR = Math.max(1, ...r1vals, ...r2vals);
+    const BAR_H = 36; // px, fits inside .trend-bars height:60px with label + month
+
+    const legend = '<div style="display:flex;gap:10px;margin-bottom:4px">' +
       '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px">' +
         '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Standard' +
       '</span>' +
@@ -1279,28 +1281,34 @@ function renderCRM(d) {
         '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3b82f6"></span>Supply-Adj' +
       '</span>' +
     '</div>';
-    trendEl.innerHTML = legend + trendArr.map((m, i) => {
-      const r1 = m.rate || 0;
-      const r2 = m.supplyRate || 0;
-      const noData = !m.prev2New || m.prev2New === 0;
-      const over100 = r2 > 100;
-      // Green bar: scale against maxR
-      const h1 = r1 === 0 ? 3 : Math.max(8, Math.round(r1 / maxR * BAR_H));
-      // Blue/orange bar: if >100% show full height in orange, else scale normally
-      const h2 = noData ? 3 : r2 === 0 ? 3 : over100 ? BAR_H : Math.max(8, Math.round(r2 / maxR * BAR_H));
-      const supplyLabel = noData ? 'No prior month data' : over100 ? r2 + '% — more repeat than new base (low base month)' : r2 + '%';
-      const barColor2 = noData ? '#E8D5B0' : over100 ? 'linear-gradient(180deg,#f59e0b,#fbbf24)' : 'linear-gradient(180deg,#3b82f6,#60a5fa)';
-      const valColor2 = noData ? '#C8B89A' : over100 ? '#f59e0b' : '#3b82f6';
-      const displayVal = noData ? '—' : r2 === 0 ? '—' : over100 ? r2 + '%↑' : r2 + '%';
-      return '<div class="trend-bar-wrap">' +
-        '<div class="trend-val" style="font-size:8px;color:' + valColor2 + '" title="' + supplyLabel + '">' + displayVal + '</div>' +
-        '<div style="display:flex;gap:2px;align-items:flex-end;height:' + BAR_H + 'px">' +
-          '<div style="height:' + h1 + 'px;flex:1;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#10b981,#34d399);min-width:4px;opacity:' + (r1===0?0.15:1) + '" title="Standard: ' + r1 + '%"></div>' +
-          '<div style="height:' + h2 + 'px;flex:1;border-radius:3px 3px 0 0;background:' + barColor2 + ';min-width:4px;opacity:' + (noData||r2===0?0.15:1) + '" title="' + supplyLabel + '"></div>' +
-        '</div>' +
-        '<div class="trend-month">' + m.month + '</div>' +
+
+    trendEl.style.alignItems = 'flex-end';
+    trendEl.style.height = 'auto';
+
+    trendEl.innerHTML = legend + '<div style="display:flex;gap:4px;align-items:flex-end;width:100%;height:' + BAR_H + 'px;margin-bottom:4px" id="trendBarRow"></div>' +
+      '<div style="display:flex;gap:4px;width:100%">' +
+        trendArr.map(m => '<div style="flex:1;font-size:9px;color:#A07850;text-align:center;white-space:nowrap">' + m.month + '</div>').join('') +
       '</div>';
-    }).join('');
+
+    // Now build the bars into #trendBarRow
+    const barRow = trendEl.querySelector('#trendBarRow');
+    if (barRow) {
+      barRow.innerHTML = trendArr.map((m, i) => {
+        const r1 = m.rate || 0;
+        const r2 = m.supplyRate || 0;
+        const noData = !m.prev2New || m.prev2New === 0;
+        const over100 = r2 > 100;
+        const h1 = r1 === 0 ? 2 : Math.max(4, Math.round(r1 / maxR * BAR_H));
+        const h2 = noData ? 2 : r2 === 0 ? 2 : over100 ? BAR_H : Math.max(4, Math.round(Math.min(r2,100) / maxR * BAR_H));
+        const col2 = noData ? '#E8D5B0' : over100 ? '#f59e0b' : '#3b82f6';
+        const tip1 = 'Standard: ' + r1 + '%';
+        const tip2 = noData ? 'No prior month data' : over100 ? r2 + '% (low base)' : r2 + '%';
+        return '<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:' + BAR_H + 'px">' +
+          '<div style="flex:1;height:' + h1 + 'px;background:#10b981;border-radius:2px 2px 0 0;opacity:' + (r1===0?0.15:0.9) + '" title="' + tip1 + '"></div>' +
+          '<div style="flex:1;height:' + h2 + 'px;background:' + col2 + ';border-radius:2px 2px 0 0;opacity:' + (noData||r2===0?0.15:0.9) + '" title="' + tip2 + '"></div>' +
+        '</div>';
+      }).join('');
+    }
   } else {
     trendEl.innerHTML = '<div style="color:#A07850;font-size:11px;align-self:center">Loading trend...</div>';
   }
