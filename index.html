@@ -1267,48 +1267,41 @@ function renderCRM(d) {
   const trendEl = document.getElementById('trendBars');
   const trendArr = d.monthlyTrend || [];
   if (trendArr.length > 0) {
-    // Find max value for scaling (exclude >100% outliers from scale calc)
     const r1vals = trendArr.map(m => m.rate || 0);
     const r2vals = trendArr.map(m => Math.min(m.supplyRate || 0, 100));
     const maxR = Math.max(1, ...r1vals, ...r2vals);
-    const BAR_H = 36; // px, fits inside .trend-bars height:60px with label + month
+    const BAR_H = 38;
 
-    const legend = '<div style="display:flex;gap:10px;margin-bottom:4px">' +
-      '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px">' +
-        '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Standard' +
-      '</span>' +
-      '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px">' +
-        '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3b82f6"></span>Supply-Adj' +
-      '</span>' +
-    '</div>';
-
-    trendEl.style.alignItems = 'flex-end';
-    trendEl.style.height = 'auto';
-
-    trendEl.innerHTML = legend + '<div style="display:flex;gap:4px;align-items:flex-end;width:100%;height:' + BAR_H + 'px;margin-bottom:4px" id="trendBarRow"></div>' +
-      '<div style="display:flex;gap:4px;width:100%">' +
-        trendArr.map(m => '<div style="flex:1;font-size:9px;color:#A07850;text-align:center;white-space:nowrap">' + m.month + '</div>').join('') +
+    trendEl.style.cssText = 'display:block;height:auto';
+    trendEl.innerHTML =
+      // Legend
+      '<div style="display:flex;gap:10px;margin-bottom:6px">' +
+        '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Standard</span>' +
+        '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3b82f6"></span>Supply-Adj</span>' +
+      '</div>' +
+      // Each column: val + bars + month label all together
+      '<div style="display:flex;gap:4px;align-items:flex-end">' +
+        trendArr.map(m => {
+          const r1 = m.rate || 0;
+          const r2 = m.supplyRate || 0;
+          const noData = !m.prev2New || m.prev2New === 0;
+          const over100 = r2 > 100;
+          const h1 = r1 === 0 ? 2 : Math.max(5, Math.round(r1 / maxR * BAR_H));
+          const h2 = noData ? 2 : over100 ? BAR_H : r2 === 0 ? 2 : Math.max(5, Math.round(r2 / maxR * BAR_H));
+          const col2 = noData ? '#ddd' : over100 ? '#f59e0b' : '#3b82f6';
+          const val2 = noData ? '<span style="color:#ccc">—</span>' : over100 ? '<span style="color:#f59e0b;font-size:8px">' + r2 + '%↑</span>' : '<span style="color:#3b82f6;font-size:8px">' + r2 + '%</span>';
+          const tip1 = 'Standard: ' + r1 + '%';
+          const tip2 = noData ? 'No prior month data' : over100 ? r2 + '% — low base month' : 'Supply-Adj: ' + r2 + '%';
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
+            '<div style="font-size:8px;font-weight:700;text-align:center">' + val2 + '</div>' +
+            '<div style="display:flex;gap:2px;align-items:flex-end;height:' + BAR_H + 'px;width:100%">' +
+              '<div style="flex:1;height:' + h1 + 'px;background:#10b981;border-radius:2px 2px 0 0" title="' + tip1 + '"></div>' +
+              '<div style="flex:1;height:' + h2 + 'px;background:' + col2 + ';border-radius:2px 2px 0 0;opacity:' + (noData ? 0.2 : 1) + '" title="' + tip2 + '"></div>' +
+            '</div>' +
+            '<div style="font-size:9px;color:#A07850;text-align:center;white-space:nowrap;margin-top:2px">' + m.month + '</div>' +
+          '</div>';
+        }).join('') +
       '</div>';
-
-    // Now build the bars into #trendBarRow
-    const barRow = trendEl.querySelector('#trendBarRow');
-    if (barRow) {
-      barRow.innerHTML = trendArr.map((m, i) => {
-        const r1 = m.rate || 0;
-        const r2 = m.supplyRate || 0;
-        const noData = !m.prev2New || m.prev2New === 0;
-        const over100 = r2 > 100;
-        const h1 = r1 === 0 ? 2 : Math.max(4, Math.round(r1 / maxR * BAR_H));
-        const h2 = noData ? 2 : r2 === 0 ? 2 : over100 ? BAR_H : Math.max(4, Math.round(Math.min(r2,100) / maxR * BAR_H));
-        const col2 = noData ? '#E8D5B0' : over100 ? '#f59e0b' : '#3b82f6';
-        const tip1 = 'Standard: ' + r1 + '%';
-        const tip2 = noData ? 'No prior month data' : over100 ? r2 + '% (low base)' : r2 + '%';
-        return '<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:' + BAR_H + 'px">' +
-          '<div style="flex:1;height:' + h1 + 'px;background:#10b981;border-radius:2px 2px 0 0;opacity:' + (r1===0?0.15:0.9) + '" title="' + tip1 + '"></div>' +
-          '<div style="flex:1;height:' + h2 + 'px;background:' + col2 + ';border-radius:2px 2px 0 0;opacity:' + (noData||r2===0?0.15:0.9) + '" title="' + tip2 + '"></div>' +
-        '</div>';
-      }).join('');
-    }
   } else {
     trendEl.innerHTML = '<div style="color:#A07850;font-size:11px;align-self:center">Loading trend...</div>';
   }
