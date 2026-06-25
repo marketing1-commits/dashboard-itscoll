@@ -131,7 +131,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── CRM Dashboard Upgrade ─────────────────────── */
 /* ── CRM Dashboard Upgrade ─────────────────────── */
-.ops-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.ops-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .ops-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
 .ops-card .oc-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .ops-card .oc-val{font-size:26px;font-weight:700;color:#3D2B1F;line-height:1}
@@ -166,7 +166,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .near-badge{font-size:10px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap}
 .sec-title{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:6px 0 8px}
 @media(max-width:900px){
-  .ops-grid{grid-template-columns:repeat(3,1fr)}
+  .ops-grid{grid-template-columns:repeat(2,1fr)}
   .funnel-grid{grid-template-columns:1fr}
   .tier-growth-grid{grid-template-columns:1fr}
   .health-row{grid-template-columns:repeat(2,1fr)}
@@ -308,41 +308,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <p style="font-size:10px;color:#A07850;margin:4px 0 0" id="crmUpdated">Loading...</p>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <select id="crmCountry" onchange="loadCRM()" style="padding:6px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:12px;background:white;color:#3D2B1F;font-weight:600">
+      <select id="crmCountry" onchange="loadCRM();loadCSActivity();" style="padding:6px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:12px;background:white;color:#3D2B1F;font-weight:600">
         <option value="">All (MY+SG)</option>
         <option value="MY">🇲🇾 Oxy MY</option>
         <option value="SG">🇸🇬 Oxy SG</option>
       </select>
-
-      <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
+      <button class="sync-btn" onclick="loadCRM();loadCSActivity();">🔄 Refresh</button>
     </div>
   </div>
 
-  <!-- LAYER 1: TODAY'S OPERATIONS -->
-  <div class="sec-title">⚡ Today's Operations</div>
-  <div class="ops-grid">
-    <div class="ops-card blue">
-      <div class="oc-accent"></div>
-      <div class="oc-label">Contacted Today</div>
-      <div class="oc-val" id="opsActionVal">—</div>
-      <div class="oc-sub" id="opsActionSub">via WhatsApp</div>
-    </div>
-    <div class="ops-card" style="border-left:4px solid #8b5cf6;background:#fff">
-      <div class="oc-label" style="color:#8b5cf6">Called Today</div>
-      <div class="oc-val" id="opsCalled">—</div>
-      <div class="oc-sub">via phone call</div>
-    </div>
+  <!-- ① TODAY'S SNAPSHOT -->
+  <div class="sec-title">⚡ Today's Snapshot</div>
+  <div class="ops-grid" style="margin-bottom:14px">
     <div class="ops-card amber">
       <div class="oc-accent"></div>
-      <div class="oc-label">T1 New Customers Today</div>
+      <div class="oc-label">T1 New Customers</div>
       <div class="oc-val" id="opsT1Val">—</div>
-      <div class="oc-sub">in today's list (no cap)</div>
+      <div class="oc-sub">arrived today (no cap)</div>
     </div>
     <div class="ops-card red">
       <div class="oc-accent"></div>
-      <div class="oc-label">AT-RISK Revenue at Stake</div>
+      <div class="oc-label">AT-RISK Revenue</div>
       <div class="oc-val" id="opsRiskVal">—</div>
-      <div class="oc-sub" id="opsRiskSub">12M spent · at-risk customers</div>
+      <div class="oc-sub" id="opsRiskSub">12M spent at risk</div>
     </div>
     <div class="ops-card purple">
       <div class="oc-accent"></div>
@@ -352,14 +340,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- LAYER 2: RETENTION HEALTH -->
-  <!-- CS Activity Tracker -->
+  <!-- ② CS ACTIVITY TRACKER -->
   <div class="cs-activity">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div style="font-size:12px;font-weight:700;color:#3D2B1F">👩‍💼 CS Activity Tracker</div>
       <div style="font-size:10px;color:#A07850" id="csLastUpdated">—</div>
     </div>
-    <!-- Period tabs -->
     <div class="cs-period-tabs">
       <button class="cs-tab active" onclick="setCSPeriod('today',this)">Today</button>
       <button class="cs-tab" onclick="setCSPeriod('week',this)">This Week</button>
@@ -372,35 +358,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button onclick="loadCSActivity()">Go</button>
       </div>
     </div>
-    <!-- Metrics -->
-    <div class="cs-metrics">
-      <div class="cs-metric">
-        <div class="cm-icon">💬</div>
-        <div class="cm-val" id="csContacted">—</div>
-        <div class="cm-label">Contacted (WhatsApp)</div>
+    <div style="display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:center;margin-top:10px">
+      <div style="position:relative;text-align:center">
+        <canvas id="csDonut" width="140" height="140"></canvas>
+        <div id="csDonutLabel" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;color:#A07850;text-align:center;line-height:1.3;pointer-events:none"></div>
       </div>
-      <div class="cs-metric">
-        <div class="cm-icon">📞</div>
-        <div class="cm-val" id="csCalled">—</div>
-        <div class="cm-label">Called (Phone)</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:12px;height:12px;border-radius:3px;background:#F5A800;flex-shrink:0"></div>
+          <div>
+            <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Contacted (WhatsApp)</div>
+            <div style="font-size:24px;font-weight:700;color:#3D2B1F" id="csContacted">—</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:12px;height:12px;border-radius:3px;background:#8b5cf6;flex-shrink:0"></div>
+          <div>
+            <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Called (Phone)</div>
+            <div style="font-size:24px;font-weight:700;color:#3D2B1F" id="csCalled">—</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #F5E6C8;padding-top:10px">
+          <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Total Touchpoints</div>
+          <div style="font-size:20px;font-weight:700;color:#F5A800" id="csTotal">—</div>
+        </div>
       </div>
-      <div class="cs-metric" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2)">
-        <div class="cm-icon">🎯</div>
-        <div class="cm-val" id="csTotal">—</div>
-        <div class="cm-label">Total Touchpoints</div>
-      </div>
-    </div>
-    <!-- Daily sparkline -->
-    <div class="cs-legend">
-      <span class="lg-contacted">Contacted</span>
-      <span class="lg-called">Called</span>
-    </div>
-    <div class="cs-sparkline" id="csSparkline">
-      <div style="color:#A07850;font-size:11px;align-self:center">Loading...</div>
     </div>
   </div>
 
-  <!-- Bronze → Silver Banner (biggest opportunity) -->
+  <!-- ③ BRONZE BANNER -->
   <div class="bronze-banner" id="bronzeBanner">
     <div class="bb-pct" id="bronzePct">—%</div>
     <div class="bb-arrow">🥉→🥈</div>
@@ -410,51 +396,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- Today's Actions Breakdown -->
-  <div class="sec-title">⚡ Today's Operations</div>
+  <!-- ④ PRIORITY ACTIONS + MONTHLY TREND -->
+  <div class="sec-title">🎯 Today's Priority Actions</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
     <div class="crm-card" style="margin:0">
-      <h4 style="margin-bottom:12px">🎯 Today's Priority Actions</h4>
-      <!-- Refill window -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F5E6C8">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F5E6C8">
         <div>
-          <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Refill Window</div>
-          <div style="font-size:10px;color:#5C4033;margin-top:1px">T5/T6/T7 + Active — fast approaching</div>
+          <div style="font-size:11px;font-weight:700;color:#10b981">🔄 Refill Window</div>
+          <div style="font-size:10px;color:#5C4033;margin-top:2px">T5/T6/T7 + Active — fast approaching</div>
         </div>
-        <div style="font-size:24px;font-weight:700;color:#10b981" id="refillCount">—</div>
+        <div style="font-size:28px;font-weight:700;color:#10b981" id="refillCount">—</div>
       </div>
-      <!-- AT-RISK today -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
         <div>
-          <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">AT-RISK to contact</div>
-          <div style="font-size:10px;color:#5C4033;margin-top:1px">60–90 days · rescue before churn</div>
+          <div style="font-size:11px;font-weight:700;color:#f59e0b">⚠️ AT-RISK to Contact</div>
+          <div style="font-size:10px;color:#5C4033;margin-top:2px">60–90 days · rescue before churn</div>
         </div>
-        <div style="font-size:24px;font-weight:700;color:#f59e0b" id="atRiskCount2">—</div>
+        <div style="font-size:28px;font-weight:700;color:#f59e0b" id="atRiskCount2">—</div>
       </div>
     </div>
     <div class="crm-card" style="margin:0">
-      <h4 style="margin-bottom:10px">📈 Monthly Repeat Rate Trend</h4>
+      <h4 style="margin-bottom:12px">📈 Monthly Repeat Rate Trend</h4>
       <div class="trend-bars" id="trendBars">
         <div style="color:#A07850;font-size:11px;align-self:center">Loading...</div>
       </div>
     </div>
   </div>
 
-  <!-- Retention Funnel: 1st → 2nd → 3rd purchase -->
-  <div class="sec-title">🔁 Retention Funnel (Purchase Cohort)</div>
-  <div class="crm-card" style="margin-bottom:14px">
-    <div class="ret-funnel" id="retFunnel">
-      <div class="ret-step"><div class="rs-num" id="rf1">—</div><div class="rs-label">1st Purchase</div></div>
-      <div class="ret-arrow">→</div>
-      <div class="ret-step"><div class="rs-num" id="rf2">—</div><div class="rs-label">2nd Purchase</div><div class="rs-pct" id="rf2pct">—% retained</div></div>
-      <div class="ret-arrow">→</div>
-      <div class="ret-step"><div class="rs-num" id="rf3">—</div><div class="rs-label">3rd Purchase</div><div class="rs-pct" id="rf3pct">—% of 2nd</div></div>
-      <div class="ret-arrow">→</div>
-      <div class="ret-step"><div class="rs-num" id="rf4plus">—</div><div class="rs-label">4th+ Purchase</div><div class="rs-pct good" id="rf4pct">—% loyal</div></div>
-    </div>
-    <div style="font-size:11px;color:#A07850;margin-top:8px;padding-top:8px;border-top:1px solid #F5E6C8" id="retFunnelNote">Based on total order count per customer</div>
-  </div>
-
+  <!-- ⑤ RETENTION HEALTH + FUNNEL -->
   <div class="sec-title">📊 Retention Health</div>
   <div class="health-row">
     <div class="health-kpi">
@@ -1074,26 +1043,26 @@ async function loadCSActivity() {
     document.getElementById('csCalled').textContent    = data.called.toLocaleString();
     document.getElementById('csTotal').textContent     = data.total.toLocaleString();
     document.getElementById('csLastUpdated').textContent = 'Updated ' + data.lastUpdated;
-    // Sparkline
-    const daily = data.daily || [];
-    const el    = document.getElementById('csSparkline');
-    if (daily.length === 0) {
-      el.innerHTML = '<div style="color:#A07850;font-size:11px;align-self:center">No activity in this period</div>';
-      return;
+
+    // Donut chart
+    const donutCtx = document.getElementById('csDonut').getContext('2d');
+    if (window._csDonut) window._csDonut.destroy();
+    if (data.contacted > 0 || data.called > 0) {
+      window._csDonut = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Contacted (WA)', 'Called (Phone)'],
+          datasets: [{ data: [data.contacted, data.called], backgroundColor: ['#F5A800','#8b5cf6'], borderWidth: 2 }]
+        },
+        options: { responsive:false, plugins:{ legend:{display:false} }, cutout:'62%' }
+      });
+      const pct = data.total > 0 ? Math.round(data.contacted/data.total*100) : 0;
+      document.getElementById('csDonutLabel').innerHTML = '<b style="font-size:13px;color:#F5A800">' + pct + '%</b><br>WA';
+    } else {
+      document.getElementById('csDonutLabel').innerHTML = '<span style="font-size:11px;color:#A07850">No data</span>';
     }
-    const maxVal = Math.max(1, ...daily.map(d => (d.contacted||0) + (d.called||0)));
-    el.innerHTML = daily.map(d => {
-      const cH = Math.max(2, Math.round((d.contacted||0) / maxVal * 38));
-      const kH = Math.max(2, Math.round((d.called||0)    / maxVal * 38));
-      const label = d.date.slice(5); // MM-DD
-      return '<div class="cs-spark-wrap">' +
-        '<div class="cs-spark-bar-row">' +
-          (d.contacted ? '<div class="cs-spark-contacted" style="height:' + cH + 'px" title="Contacted: ' + d.contacted + '"></div>' : '') +
-          (d.called    ? '<div class="cs-spark-called"    style="height:' + kH + 'px" title="Called: '    + d.called    + '"></div>' : '') +
-        '</div>' +
-        '<div class="cs-spark-date">' + label + '</div>' +
-      '</div>';
-    }).join('');
+
+    // Sparkline removed — pie chart replaces it
   } catch(e) {
     document.getElementById('csContacted').textContent = 'Err';
     document.getElementById('csLastUpdated').textContent = e.message;
@@ -1131,10 +1100,7 @@ function renderCRM(d) {
 
   // ── Layer 1: Ops ──
   const done  = o.todayDone  || 0;
-  const called = o.todayCalled || 0;
-  document.getElementById('opsActionVal').textContent = done.toString();
-  document.getElementById('opsActionSub').textContent = 'via WhatsApp';
-  document.getElementById('opsCalled').textContent = called.toString();
+  // todayDone and todayCalled now shown in CS Activity Tracker only
 
 
 
