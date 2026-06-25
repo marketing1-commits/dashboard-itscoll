@@ -286,13 +286,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <option value="MY">🇲🇾 Oxy MY</option>
         <option value="SG">🇸🇬 Oxy SG</option>
       </select>
-      <select id="crmPeriod" onchange="loadCRM()" style="padding:6px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:12px;background:white;color:#3D2B1F;font-weight:600">
-        <option value="all">📅 All Time</option>
-        <option value="30">Last 30 Days</option>
-        <option value="90">Last 90 Days</option>
-        <option value="180">Last 6 Months</option>
-        <option value="365">Last 12 Months</option>
-      </select>
+
       <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
     </div>
   </div>
@@ -951,8 +945,7 @@ async function loadCRM() {
     const country = document.getElementById('crmCountry').value;
     let url = CRM_API + '?action=kpi&t=' + Date.now();
     if (country) url += '&country=' + country;
-    const period = document.getElementById('crmPeriod') ? document.getElementById('crmPeriod').value : 'all';
-    if (period && period !== 'all') url += '&days=' + period;
+
     const res = await fetch(url);
     const d = await res.json();
     if (d.error) throw new Error(d.error);
@@ -981,9 +974,7 @@ function renderCRM(d) {
   document.getElementById('opsActionSub').textContent = 'via WhatsApp';
   document.getElementById('opsCalled').textContent = called.toString();
 
-  // Update header label with period
-  const periodEl = document.getElementById('crmPeriod');
-  const periodLabel = periodEl ? periodEl.options[periodEl.selectedIndex].text : 'All Time';
+
 
   document.getElementById('opsT1Val').textContent = (o.todayT1 || 0).toString();
 
