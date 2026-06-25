@@ -1292,8 +1292,12 @@ function renderCRM(d) {
           const val2 = noData ? '<span style="color:#ccc">—</span>' : over100 ? '<span style="color:#f59e0b;font-size:8px">' + r2 + '%↑</span>' : '<span style="color:#3b82f6;font-size:8px">' + r2 + '%</span>';
           const tip1 = 'Standard: ' + r1 + '%';
           const tip2 = noData ? 'No prior month data' : over100 ? r2 + '% — low base month' : 'Supply-Adj: ' + r2 + '%';
+          const val1 = r1 === 0 ? '<span style="color:#ccc">—</span>' : '<span style="color:#10b981;font-size:8px">' + r1 + '%</span>';
           return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
-            '<div style="font-size:8px;font-weight:700;text-align:center">' + val2 + '</div>' +
+            '<div style="display:flex;gap:4px;justify-content:center;text-align:center;min-height:14px">' +
+              '<div style="font-size:8px;font-weight:700">' + val1 + '</div>' +
+              '<div style="font-size:8px;font-weight:700">' + val2 + '</div>' +
+            '</div>' +
             '<div style="display:flex;gap:2px;align-items:flex-end;height:' + BAR_H + 'px;width:100%">' +
               '<div style="flex:1;height:' + h1 + 'px;background:#10b981;border-radius:2px 2px 0 0" title="' + tip1 + '"></div>' +
               '<div style="flex:1;height:' + h2 + 'px;background:' + col2 + ';border-radius:2px 2px 0 0;opacity:' + (noData ? 0.2 : 1) + '" title="' + tip2 + '"></div>' +
