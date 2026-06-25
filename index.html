@@ -128,6 +128,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .kpis{grid-template-columns:1fr 1fr}
   .top h1 .sub{display:none}
 }
+
+/* ── CRM Dashboard Upgrade ─────────────────────── */
+/* ── CRM Dashboard Upgrade ─────────────────────── */
+.ops-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.ops-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.ops-card .oc-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.ops-card .oc-val{font-size:26px;font-weight:700;color:#3D2B1F;line-height:1}
+.ops-card .oc-sub{font-size:11px;color:#A07850;margin-top:4px}
+.ops-card .oc-accent{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:10px 0 0 10px}
+.ops-card.blue .oc-accent{background:#3b82f6}
+.ops-card.amber .oc-accent{background:#f59e0b}
+.ops-card.red .oc-accent{background:#ef4444}
+.ops-card.purple .oc-accent{background:#a855f7}
+.prog-bar{flex:1;height:6px;background:#F5E6C8;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#F5A800,#10b981);transition:width .4s}
+.health-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.health-kpi{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px;text-align:center}
+.health-kpi .hk-val{font-size:22px;font-weight:700;color:#3D2B1F}
+.health-kpi .hk-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.health-kpi .hk-sub{font-size:11px;color:#A07850;margin-top:2px}
+.funnel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.funnel-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.funnel-card h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.funnel-lbl{width:90px;font-size:11px;color:#5C4033;text-align:right;flex-shrink:0}
+.funnel-track{flex:1;background:#F5E6C8;border-radius:4px;height:18px;overflow:hidden}
+.funnel-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;min-width:24px}
+.funnel-fill span{font-size:10px;color:#fff;font-weight:700;white-space:nowrap}
+.funnel-arrow{font-size:10px;color:#A07850;text-align:center;margin:0 0 4px 98px}
+.tier-growth-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.tg-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px}
+.tg-card h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.near-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F5E6C8;font-size:12px}
+.near-row:last-child{border-bottom:none}
+.near-name{color:#3D2B1F;font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.near-badge{font-size:10px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap}
+.sec-title{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:6px 0 8px}
+@media(max-width:900px){
+  .ops-grid{grid-template-columns:repeat(2,1fr)}
+  .funnel-grid{grid-template-columns:1fr}
+  .tier-growth-grid{grid-template-columns:1fr}
+  .health-row{grid-template-columns:repeat(2,1fr)}
+}
+
 </style>
 </head>
 <body>
@@ -203,6 +247,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="crmTab" class="tab-content">
 <div class="crm-main">
+
+  <!-- Header -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div>
       <h2 style="font-size:16px;color:#3D2B1F;margin:0;font-weight:700">👥 CRM — Customer Retention Dashboard</h2>
@@ -217,33 +263,129 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
     </div>
   </div>
-  <div class="crm-kpis" id="crmKpis">
-    <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">👥</div><div class="label">Total Customers</div><div class="val" id="crmTotal">—</div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(16,185,129,.12);color:#10b981">🟢</div><div class="label">Active</div><div class="val" id="crmActive">—</div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(245,168,0,.12);color:#F5A800">🔄</div><div class="label">Repeat Rate</div><div class="val" id="crmRepeat">—</div><div class="sub" id="crmRepeatSub"></div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(249,115,22,.12);color:#f97316">⚠️</div><div class="label">At-Risk</div><div class="val" id="crmRisk">—</div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(239,68,68,.12);color:#ef4444">❌</div><div class="label">Churned</div><div class="val" id="crmChurned">—</div></div>
+
+  <!-- LAYER 1: TODAY'S OPERATIONS -->
+  <div class="sec-title">⚡ Today's Operations</div>
+  <div class="ops-grid">
+    <div class="ops-card blue">
+      <div class="oc-accent"></div>
+      <div class="oc-label">Action List Progress</div>
+      <div class="oc-val" id="opsActionVal">—</div>
+      <div class="oc-sub" id="opsActionSub">tasks today</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <div class="prog-bar"><div class="prog-fill" id="opsActionBar" style="width:0%"></div></div>
+        <span style="font-size:11px;color:#3b82f6;font-weight:700" id="opsActionPct">0%</span>
+      </div>
+    </div>
+    <div class="ops-card amber">
+      <div class="oc-accent"></div>
+      <div class="oc-label">T1 New Customers Today</div>
+      <div class="oc-val" id="opsT1Val">—</div>
+      <div class="oc-sub">in today's list (no cap)</div>
+    </div>
+    <div class="ops-card red">
+      <div class="oc-accent"></div>
+      <div class="oc-label">AT-RISK Revenue at Stake</div>
+      <div class="oc-val" id="opsRiskVal">—</div>
+      <div class="oc-sub" id="opsRiskSub">12M spent · at-risk customers</div>
+    </div>
+    <div class="ops-card purple">
+      <div class="oc-accent"></div>
+      <div class="oc-label">Birthdays</div>
+      <div class="oc-val" id="opsBdayVal">—</div>
+      <div class="oc-sub" id="opsBdaySub">this week</div>
+    </div>
   </div>
-  <div class="crm-kpis" style="grid-template-columns:repeat(3,1fr)">
-    <div class="crm-kpi"><div class="icon" style="background:rgba(245,168,0,.12);color:#F5A800">💰</div><div class="label">Total Lifetime Revenue</div><div class="val" id="crmRevenue">—</div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(168,85,247,.12);color:#a855f7">📋</div><div class="label">Avg Customer Value</div><div class="val" id="crmACV">—</div></div>
-    <div class="crm-kpi"><div class="icon" style="background:rgba(59,130,246,.12);color:#3b82f6">📅</div><div class="label">Today's Actions</div><div class="val" id="crmActions">—</div><div class="sub" id="crmActionsSub"></div></div>
+
+  <!-- LAYER 2: RETENTION HEALTH -->
+  <div class="sec-title">📊 Retention Health</div>
+  <div class="health-row">
+    <div class="health-kpi">
+      <div class="hk-val" id="hRepeat">—</div>
+      <div class="hk-label">Repeat Rate</div>
+      <div class="hk-sub" id="hRepeatSub">—</div>
+    </div>
+    <div class="health-kpi">
+      <div class="hk-val" id="hActive">—</div>
+      <div class="hk-label">Active Customers</div>
+      <div class="hk-sub" id="hActiveSub">of total</div>
+    </div>
+    <div class="health-kpi" style="border-left:3px solid #f59e0b">
+      <div class="hk-val" style="color:#f59e0b" id="hRisk">—</div>
+      <div class="hk-label">AT-RISK</div>
+      <div class="hk-sub">60–90 days no purchase</div>
+    </div>
+    <div class="health-kpi" style="border-left:3px solid #ef4444">
+      <div class="hk-val" style="color:#ef4444" id="hChurned">—</div>
+      <div class="hk-label">Churned</div>
+      <div class="hk-sub">90+ days no purchase</div>
+    </div>
   </div>
-  <div class="crm-charts">
-    <div class="crm-card"><h4>🏆 Tier Distribution</h4><div style="display:flex;align-items:center;gap:20px"><canvas id="crmTierChart" width="160" height="160"></canvas><div id="crmTierLegend"></div></div></div>
-    <div class="crm-card"><h4>🔄 Journey Stages</h4><div style="display:flex;align-items:center;gap:20px"><canvas id="crmJourneyChart" width="160" height="160"></canvas><div id="crmJourneyLegend"></div></div></div>
+
+  <!-- Funnel + Tier chart -->
+  <div class="funnel-grid">
+    <div class="funnel-card">
+      <h4>🔁 New Customer Journey Funnel</h4>
+      <div id="crmFunnel">Loading...</div>
+    </div>
+    <div class="funnel-card">
+      <h4>🏆 Tier Distribution</h4>
+      <div style="display:flex;align-items:center;gap:16px">
+        <canvas id="crmTierChart" width="140" height="140" style="flex-shrink:0"></canvas>
+        <div id="crmTierLegend" style="flex:1"></div>
+      </div>
+    </div>
   </div>
-  <div class="crm-charts">
+
+  <!-- LAYER 3: TIER GROWTH -->
+  <div class="sec-title">📈 Tier Growth Opportunities</div>
+  <div class="tier-growth-grid">
+    <div class="tg-card">
+      <h4>💰 Revenue Overview</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+        <div>
+          <div style="font-size:10px;color:#A07850">Total Lifetime Revenue</div>
+          <div style="font-size:18px;font-weight:700;color:#F5A800" id="tgRevenue">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#A07850">Avg Customer Value</div>
+          <div style="font-size:16px;font-weight:700;color:#3D2B1F" id="tgACV">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#A07850">Total Customers</div>
+          <div style="font-size:16px;font-weight:700;color:#3D2B1F" id="tgTotal">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#A07850">CHURNED — Potential Recovery (12M)</div>
+          <div style="font-size:14px;font-weight:700;color:#ef4444" id="tgChurnedRev">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="tg-card">
+      <h4>⬆️ Close to Silver Upgrade (Top Bronze)</h4>
+      <div id="tgNearSilver">Loading...</div>
+    </div>
+    <div class="tg-card">
+      <h4>🗺️ All Journey Stages</h4>
+      <div id="tgJourneyBars"></div>
+    </div>
+  </div>
+
+  <!-- Channel + State -->
+  <div class="crm-charts" style="margin-bottom:14px">
     <div class="crm-card"><h4>📢 Channel Distribution</h4><div id="crmChannelBars"></div></div>
     <div class="crm-card"><h4>📍 State Distribution</h4><div id="crmStateBars"></div></div>
   </div>
-  <div class="crm-card" style="margin-bottom:14px"><h4>🌟 Top 10 Customers by Lifetime Value</h4>
+
+  <!-- Top 10 -->
+  <div class="crm-card" style="margin-bottom:14px">
+    <h4>🌟 Top 10 Customers by Lifetime Value</h4>
     <table class="crm-table">
       <thead><tr><th>#</th><th>Customer</th><th style="text-align:right">Orders</th><th style="text-align:right">Total Spent</th><th>Tier</th></tr></thead>
       <tbody id="crmTopTable"></tbody>
     </table>
   </div>
-  <div class="crm-card"><h4>🗺️ Detailed Journey Stages</h4><div id="crmJourneyBars"></div></div>
+
 </div>
 </div><!-- end crmTab -->
 
@@ -704,12 +846,14 @@ function switchTab(tab) {
 
 // ─── CRM DASHBOARD ──────────────────────────────────────────
 const CRM_API = 'https://script.google.com/macros/s/AKfycbwT4aFsvIjZQm0y8VSek0ZfG3g53ZsHK_AgfFQr0amWjb5w2AZkgWgiGpl5QY2mRrtT/exec';
-let crmTierChart, crmJourneyChart;
+let crmTierChart;
 
 async function loadCRM() {
+  const el = document.getElementById('crmUpdated');
+  el.textContent = 'Loading...';
   try {
-    var country = document.getElementById('crmCountry').value;
-    var url = CRM_API + '?action=kpi';
+    const country = document.getElementById('crmCountry').value;
+    let url = CRM_API + '?action=kpi';
     if (country) url += '&country=' + country;
     const res = await fetch(url);
     const d = await res.json();
@@ -721,66 +865,132 @@ async function loadCRM() {
   }
 }
 
+function fCRMK(v) {
+  if (v >= 1000000) return 'RM' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000)    return 'RM' + (v/1000).toFixed(0) + 'K';
+  return 'RM' + Math.round(v);
+}
+
 function renderCRM(d) {
   const o = d.overview;
-  var countryLabel = d.country === 'MY' ? '🇲🇾 Oxy MY' : d.country === 'SG' ? '🇸🇬 Oxy SG' : '🌏 All';
-  document.getElementById('crmUpdated').textContent = countryLabel + ' · Last updated: ' + d.lastUpdated;
-  document.getElementById('crmTotal').textContent = o.totalCustomers.toLocaleString();
-  document.getElementById('crmActive').textContent = o.activeCustomers.toLocaleString();
-  document.getElementById('crmRepeat').textContent = o.repeatRate + '%';
-  document.getElementById('crmRepeatSub').textContent = o.repeatOrders + ' / ' + o.totalOrders + ' orders';
-  document.getElementById('crmRisk').textContent = o.atRiskCustomers.toLocaleString();
-  document.getElementById('crmChurned').textContent = o.churnedCustomers.toLocaleString();
-  document.getElementById('crmRevenue').textContent = 'RM ' + o.totalRevenue.toLocaleString();
-  document.getElementById('crmACV').textContent = 'RM ' + o.avgCustomerValue.toLocaleString();
-  document.getElementById('crmActions').textContent = o.todayDone + ' / ' + o.todayActions;
-  document.getElementById('crmActionsSub').textContent = o.todayActions > 0 ? Math.round(o.todayDone / o.todayActions * 100) + '% done' : '';
-  const tierColors = {Bronze:'#CD7F32',Silver:'#A8A9AD',Gold:'#D4951B',Platinum:'#7B68EE',Diamond:'#FF6B6B'};
-  const tierData = d.tierDistribution;
+  const lbl = d.country==='MY' ? '🇲🇾 Oxy MY' : d.country==='SG' ? '🇸🇬 Oxy SG' : '🌏 All (MY+SG)';
+  document.getElementById('crmUpdated').textContent = lbl + ' · Last updated: ' + d.lastUpdated;
+
+  // ── Layer 1: Ops ──
+  const done  = o.todayDone  || 0;
+  const total = o.todayTotal || 0;
+  const pct   = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('opsActionVal').textContent = done + ' / ' + total;
+  document.getElementById('opsActionSub').textContent = total + ' tasks today';
+  document.getElementById('opsActionBar').style.width = pct + '%';
+  document.getElementById('opsActionPct').textContent = pct + '%';
+
+  document.getElementById('opsT1Val').textContent = (o.todayT1 || 0).toString();
+
+  document.getElementById('opsRiskVal').textContent = fCRMK(o.atRiskRevenue || 0);
+  document.getElementById('opsRiskSub').textContent = (o.atRiskCustomers || 0) + ' customers · 12M spent at risk';
+
+  const bdayToday = o.birthdayToday || 0;
+  const bdayWeek  = o.birthdayWeek  || 0;
+  document.getElementById('opsBdayVal').textContent = bdayToday > 0 ? '🎂 ' + bdayToday : bdayWeek.toString();
+  document.getElementById('opsBdaySub').textContent = bdayToday > 0 ? bdayWeek + ' this week total' : 'birthdays this week';
+
+  // ── Layer 2: Health ──
+  document.getElementById('hRepeat').textContent   = (o.repeatRate || 0) + '%';
+  document.getElementById('hRepeatSub').textContent = (o.repeatOrders || 0) + ' / ' + (o.totalOrders || 0) + ' orders';
+  document.getElementById('hActive').textContent   = (o.activeCustomers || 0).toLocaleString();
+  document.getElementById('hActiveSub').textContent = o.totalCustomers > 0 ? Math.round(o.activeCustomers/o.totalCustomers*100) + '% of ' + o.totalCustomers.toLocaleString() : '';
+  document.getElementById('hRisk').textContent    = (o.atRiskCustomers || 0).toLocaleString();
+  document.getElementById('hChurned').textContent = (o.churnedCustomers || 0).toLocaleString();
+
+  // ── Journey Funnel ──
+  const stages = d.journeyStages || {};
+  const funnelDef = [
+    {key:'NEW-TRANSIT', lbl:'TRANSIT',   color:'#6366f1'},
+    {key:'NEW-T1',      lbl:'T1',        color:'#3b82f6'},
+    {key:'NEW-T2',      lbl:'T2',        color:'#0ea5e9'},
+    {key:'NEW-T3',      lbl:'T3',        color:'#06b6d4'},
+    {key:'NEW-T4',      lbl:'T4',        color:'#10b981'},
+    {key:'NEW-NURTURE', lbl:'NURTURE',   color:'#22c55e'},
+    {key:'NEW-T5',      lbl:'T5 Refill', color:'#f59e0b'},
+    {key:'NEW-T6',      lbl:'T6 Refill', color:'#f97316'},
+    {key:'NEW-T7',      lbl:'T7 Final',  color:'#ef4444'},
+  ];
+  const maxF = Math.max(1, ...funnelDef.map(s => stages[s.key] || 0));
+  let fh = '';
+  funnelDef.forEach((s, i) => {
+    const v = stages[s.key] || 0;
+    const w = Math.max(8, Math.round(v / maxF * 100));
+    fh += '<div class="funnel-row"><div class="funnel-lbl">' + s.lbl + '</div><div class="funnel-track"><div class="funnel-fill" style="width:' + w + '%;background:' + s.color + '"><span>' + v + '</span></div></div></div>';
+    if (i < funnelDef.length - 1) fh += '<div class="funnel-arrow">↓</div>';
+  });
+  fh += '<div class="funnel-arrow" style="color:#10b981;font-weight:700;margin-top:6px">→ ACTIVE: ' + (stages['ACTIVE'] || 0) + '</div>';
+  document.getElementById('crmFunnel').innerHTML = fh;
+
+  // ── Tier Donut ──
+  const tierColors = {Bronze:'#CD7F32', Silver:'#A8A9AD', Gold:'#D4951B', Platinum:'#7B68EE', Diamond:'#5BC8FF'};
+  const tierData   = d.tierDistribution || {};
   const tierLabels = Object.keys(tierData);
   if (crmTierChart) crmTierChart.destroy();
   crmTierChart = new Chart(document.getElementById('crmTierChart'), {
-    type:'doughnut', data:{labels:tierLabels,datasets:[{data:tierLabels.map(k=>tierData[k]),backgroundColor:tierLabels.map(k=>tierColors[k]||'#CCC'),borderWidth:2}]},
-    options:{responsive:false,plugins:{legend:{display:false}},cutout:'55%'}
+    type: 'doughnut',
+    data: { labels: tierLabels, datasets: [{ data: tierLabels.map(k => tierData[k]), backgroundColor: tierLabels.map(k => tierColors[k] || '#ccc'), borderWidth: 2 }] },
+    options: { responsive: false, plugins: { legend: { display: false } }, cutout: '60%' }
   });
-  document.getElementById('crmTierLegend').innerHTML = tierLabels.filter(k=>tierData[k]>0).map(k=>
-    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><div style="width:12px;height:12px;border-radius:3px;background:'+tierColors[k]+'"></div><span style="font-size:11px;color:#5C4033">'+k+'</span><b style="font-size:12px;color:#3D2B1F">'+tierData[k]+'</b><span style="font-size:10px;color:#A07850">('+Math.round(tierData[k]/o.totalCustomers*100)+'%)</span></div>'
+  document.getElementById('crmTierLegend').innerHTML = tierLabels.filter(k => tierData[k] > 0).map(k =>
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">' +
+    '<div style="width:11px;height:11px;border-radius:3px;background:' + tierColors[k] + '"></div>' +
+    '<span style="font-size:11px;color:#5C4033">' + k + '</span>' +
+    '<b style="font-size:12px;color:#3D2B1F">' + tierData[k] + '</b>' +
+    '<span style="font-size:10px;color:#A07850">(' + (o.totalCustomers > 0 ? Math.round(tierData[k]/o.totalCustomers*100) : 0) + '%)</span>' +
+    '</div>'
   ).join('');
-  const journeyGroups = {'New':0,'Active':0,'At-Risk':0,'Churned':0};
-  Object.entries(d.journeyStages||{}).forEach(function(e){
-    var s=e[0],c=e[1];
-    if(s==='ACTIVE') journeyGroups['Active']+=c;
-    else if(s==='AT-RISK') journeyGroups['At-Risk']+=c;
-    else if(s==='CHURNED') journeyGroups['Churned']+=c;
-    else journeyGroups['New']+=c;
-  });
-  const jColors = {'New':'#3498DB','Active':'#27AE60','At-Risk':'#F39C12','Churned':'#E74C3C'};
-  const jLabels = Object.keys(journeyGroups);
-  if (crmJourneyChart) crmJourneyChart.destroy();
-  crmJourneyChart = new Chart(document.getElementById('crmJourneyChart'), {
-    type:'doughnut', data:{labels:jLabels,datasets:[{data:jLabels.map(k=>journeyGroups[k]),backgroundColor:jLabels.map(k=>jColors[k]),borderWidth:2}]},
-    options:{responsive:false,plugins:{legend:{display:false}},cutout:'55%'}
-  });
-  document.getElementById('crmJourneyLegend').innerHTML = jLabels.filter(k=>journeyGroups[k]>0).map(k=>
-    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><div style="width:12px;height:12px;border-radius:3px;background:'+jColors[k]+'"></div><span style="font-size:11px;color:#5C4033">'+k+'</span><b style="font-size:12px;color:#3D2B1F">'+journeyGroups[k]+'</b></div>'
+
+  // ── Layer 3: Tier Growth ──
+  document.getElementById('tgRevenue').textContent    = fCRMK(o.totalRevenue || 0);
+  document.getElementById('tgACV').textContent        = 'RM ' + (o.avgCustomerValue || 0).toLocaleString();
+  document.getElementById('tgTotal').textContent      = (o.totalCustomers || 0).toLocaleString() + ' customers';
+  document.getElementById('tgChurnedRev').textContent = fCRMK(o.churnedRevenue || 0) + ' recoverable';
+
+  // Bronze → Silver potentials (from topCustomers Bronze)
+  const bronzeList = (d.topCustomers || []).filter(c => c.tier && c.tier.includes('Bronze')).slice(0, 7);
+  if (bronzeList.length) {
+    document.getElementById('tgNearSilver').innerHTML = bronzeList.map(c => {
+      const gap = Math.max(0, 1000 - (c.spent || 0));
+      const gapTxt = gap > 0 ? 'RM' + gap.toLocaleString() + ' to Silver' : '✓ Ready!';
+      const bg = gap === 0 ? '#10b981' : gap <= 200 ? '#f59e0b' : '#A07850';
+      return '<div class="near-row"><div class="near-name">' + c.name + '</div><span class="near-badge" style="background:' + bg + '">' + gapTxt + '</span></div>';
+    }).join('');
+  } else {
+    document.getElementById('tgNearSilver').innerHTML = '<div style="color:#A07850;font-size:11px;padding:8px 0">No Bronze in top customers</div>';
+  }
+
+  // Journey stage bars (all)
+  const jBarColors = {'NEW-TRANSIT':'#6366f1','NEW-T1':'#3b82f6','NEW-T2':'#0ea5e9','NEW-T3':'#06b6d4','NEW-T4':'#10b981','NEW-NURTURE':'#22c55e','NEW-T5':'#f59e0b','NEW-T6':'#f97316','NEW-T7':'#ef4444','ACTIVE':'#16a34a','AT-RISK':'#d97706','CHURNED':'#dc2626'};
+  renderCRMBars('tgJourneyBars',   d.journeyStages,       null,      15, jBarColors);
+  renderCRMBars('crmChannelBars',  d.channelDistribution, '#F5A800',  8, null);
+  renderCRMBars('crmStateBars',    d.stateDistribution,   '#3b82f6', 10, null);
+
+  // Top 10 table
+  document.getElementById('crmTopTable').innerHTML = (d.topCustomers || []).map((c, i) =>
+    '<tr><td style="color:#A07850">' + (i+1) + '</td>' +
+    '<td style="font-weight:600;color:#3D2B1F">' + c.name + '</td>' +
+    '<td style="text-align:right;color:#5C4033">' + c.orders + '</td>' +
+    '<td style="text-align:right;font-weight:700;color:#F5A800">RM ' + c.spent.toLocaleString() + '</td>' +
+    '<td style="font-size:11px">' + c.tier + '</td></tr>'
   ).join('');
-  renderBars('crmChannelBars', d.channelDistribution, '#F5A800', 8);
-  renderBars('crmStateBars', d.stateDistribution, '#3b82f6', 10);
-  renderBars('crmJourneyBars', d.journeyStages, '#27AE60', 15);
-  document.getElementById('crmTopTable').innerHTML = (d.topCustomers||[]).map(function(c,i){
-    return '<tr><td style="color:#A07850">'+(i+1)+'</td><td style="font-weight:600;color:#3D2B1F">'+c.name+'</td><td style="text-align:right;color:#5C4033">'+c.orders+'</td><td style="text-align:right;font-weight:700;color:#F5A800">RM '+c.spent.toLocaleString()+'</td><td style="font-size:11px">'+c.tier+'</td></tr>';
+}
+
+function renderCRMBars(id, data, defaultColor, max, colorMap) {
+  const entries = Object.entries(data || {}).sort((a, b) => b[1] - a[1]).slice(0, max);
+  const maxVal  = Math.max(1, ...entries.map(e => e[1]));
+  document.getElementById(id).innerHTML = entries.map(([k, v]) => {
+    const color = (colorMap && colorMap[k]) ? colorMap[k] : (defaultColor || '#10b981');
+    const w = Math.max(8, Math.round(v / maxVal * 100));
+    return '<div class="crm-bar"><div class="crm-bar-label">' + k + '</div><div class="crm-bar-track"><div class="crm-bar-fill" style="width:' + w + '%;background:' + color + '"><span>' + v + '</span></div></div></div>';
   }).join('');
 }
 
-function renderBars(containerId, data, color, max) {
-  var entries = Object.entries(data||{}).sort(function(a,b){return b[1]-a[1]}).slice(0,max);
-  var maxVal = Math.max.apply(null, entries.map(function(e){return e[1]}));
-  if(maxVal<1) maxVal=1;
-  document.getElementById(containerId).innerHTML = entries.map(function(e){
-    var k=e[0],v=e[1];
-    return '<div class="crm-bar"><div class="crm-bar-label">'+k+'</div><div class="crm-bar-track"><div class="crm-bar-fill" style="width:'+Math.round(v/maxVal*100)+'%;background:'+color+'"><span>'+v+'</span></div></div></div>';
-  }).join('');
-}
 </script>
 </body>
 </html>
