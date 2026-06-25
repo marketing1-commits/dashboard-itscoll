@@ -172,6 +172,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .health-row{grid-template-columns:repeat(2,1fr)}
 }
 
+
+/* ── Retention Funnel (purchase count) ── */
+.ret-funnel{display:flex;align-items:center;gap:0;margin:8px 0}
+.ret-step{flex:1;text-align:center;position:relative}
+.ret-step .rs-num{font-size:20px;font-weight:700;color:#3D2B1F}
+.ret-step .rs-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.ret-step .rs-pct{font-size:11px;color:#ef4444;font-weight:600;margin-top:2px}
+.ret-step .rs-pct.good{color:#10b981}
+.ret-arrow{font-size:18px;color:#E8D5B0;flex-shrink:0;padding:0 4px;margin-bottom:14px}
+/* ── Monthly trend mini bars ── */
+.trend-bars{display:flex;align-items:flex-end;gap:4px;height:60px;padding:0 4px}
+.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.trend-bar{width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:height .3s;background:linear-gradient(180deg,#10b981,#34d399)}
+.trend-bar.low{background:linear-gradient(180deg,#ef4444,#f87171)}
+.trend-month{font-size:9px;color:#A07850;text-align:center;white-space:nowrap}
+.trend-val{font-size:9px;color:#3D2B1F;font-weight:700;text-align:center}
+/* ── Bronze highlight banner ── */
+.bronze-banner{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #CD7F32;border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+.bronze-banner .bb-pct{font-size:36px;font-weight:700;color:#CD7F32;line-height:1}
+.bronze-banner .bb-text h4{font-size:13px;font-weight:700;color:#3D2B1F;margin-bottom:4px}
+.bronze-banner .bb-text p{font-size:11px;color:#A07850;margin:0}
+.bronze-banner .bb-arrow{font-size:28px;color:#CD7F32;margin:0 8px}
+/* ── Today breakdown pills ── */
+.today-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.today-pill{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#fff}
+
 </style>
 </head>
 <body>
@@ -298,6 +324,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <!-- LAYER 2: RETENTION HEALTH -->
+  <!-- Bronze → Silver Banner (biggest opportunity) -->
+  <div class="bronze-banner" id="bronzeBanner">
+    <div class="bb-pct" id="bronzePct">—%</div>
+    <div class="bb-arrow">🥉→🥈</div>
+    <div class="bb-text">
+      <h4>Bronze → Silver 升级机会最大</h4>
+      <p id="bronzeDesc">86% 客户还在 Bronze 层，Silver 门槛 RM1,000</p>
+    </div>
+  </div>
+
+  <!-- Today's Actions Breakdown -->
+  <div class="sec-title">⚡ Today's Operations</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="crm-card" style="margin:0">
+      <h4 style="margin-bottom:10px">📋 Today's Actions</h4>
+      <div style="font-size:26px;font-weight:700;color:#3b82f6" id="todayTotal2">—</div>
+      <div style="font-size:11px;color:#A07850;margin-bottom:8px" id="todayDoneSub">tasks today</div>
+      <div class="today-pills" id="todayPills"></div>
+    </div>
+    <div class="crm-card" style="margin:0">
+      <h4 style="margin-bottom:10px">📈 Monthly Repeat Rate Trend</h4>
+      <div class="trend-bars" id="trendBars">
+        <div style="color:#A07850;font-size:11px;align-self:center">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Retention Funnel: 1st → 2nd → 3rd purchase -->
+  <div class="sec-title">🔁 Retention Funnel (Purchase Cohort)</div>
+  <div class="crm-card" style="margin-bottom:14px">
+    <div class="ret-funnel" id="retFunnel">
+      <div class="ret-step"><div class="rs-num" id="rf1">—</div><div class="rs-label">1st Purchase</div></div>
+      <div class="ret-arrow">→</div>
+      <div class="ret-step"><div class="rs-num" id="rf2">—</div><div class="rs-label">2nd Purchase</div><div class="rs-pct" id="rf2pct">—% retained</div></div>
+      <div class="ret-arrow">→</div>
+      <div class="ret-step"><div class="rs-num" id="rf3">—</div><div class="rs-label">3rd Purchase</div><div class="rs-pct" id="rf3pct">—% of 2nd</div></div>
+      <div class="ret-arrow">→</div>
+      <div class="ret-step"><div class="rs-num" id="rf4plus">—</div><div class="rs-label">4th+ Purchase</div><div class="rs-pct good" id="rf4pct">—% loyal</div></div>
+    </div>
+    <div style="font-size:11px;color:#A07850;margin-top:8px;padding-top:8px;border-top:1px solid #F5E6C8" id="retFunnelNote">Based on total order count per customer</div>
+  </div>
+
   <div class="sec-title">📊 Retention Health</div>
   <div class="health-row">
     <div class="health-kpi">
@@ -945,6 +1013,96 @@ function renderCRM(d) {
     '<span style="font-size:10px;color:#A07850">(' + (o.totalCustomers > 0 ? Math.round(tierData[k]/o.totalCustomers*100) : 0) + '%)</span>' +
     '</div>'
   ).join('');
+
+  // ── Bronze Banner ──
+  const tierD = d.tierDistribution || {};
+  const totalT = o.totalCustomers || 1;
+  const bronzeCount = tierD.Bronze || 0;
+  const bronzePctVal = Math.round(bronzeCount / totalT * 100);
+  document.getElementById('bronzePct').textContent = bronzePctVal + '%';
+  document.getElementById('bronzeDesc').textContent =
+    bronzeCount + ' 客户在 Bronze 层 · Silver 门槛 RM1,000 (12M spent)';
+
+  // ── Today's Actions Breakdown (new) ──
+  const todayDone2  = o.todayDone  || 0;
+  const todayTotal2 = o.todayTotal || 0;
+  const todayT1c    = o.todayT1    || 0;
+  document.getElementById('todayTotal2').textContent = todayDone2 + ' / ' + todayTotal2;
+  document.getElementById('todayDoneSub').textContent = todayTotal2 + ' tasks today';
+  const stages2 = d.journeyStages || {};
+  const refillCount = (stages2['NEW-T5']||0)+(stages2['NEW-T6']||0)+(stages2['NEW-T7']||0)+(stages2['ACTIVE']||0);
+  const atRiskCount = stages2['AT-RISK'] || 0;
+  const pills = [
+    {label:'T1 New: '+todayT1c, bg:'#3b82f6'},
+    {label:'Refill: '+Math.min(refillCount,70), bg:'#10b981'},
+    {label:'AT-RISK: '+Math.min(atRiskCount,30), bg:'#f59e0b'},
+    {label:'Churned: '+Math.min(stages2['CHURNED']||0,10), bg:'#ef4444'},
+  ];
+  document.getElementById('todayPills').innerHTML = pills.map(p =>
+    '<div class="today-pill" style="background:'+p.bg+'">'+p.label+'</div>'
+  ).join('');
+
+  // ── Monthly Repeat Rate Trend (derived from journeyStages as proxy) ──
+  // We'll use a 6-month rolling from todayTotal/repeatOrders data
+  // Since we only have total repeatRate, show a trend line with current + estimated prior
+  const currRate = o.repeatRate || 0;
+  const trendData = d.monthlyTrend || null;
+  const trendEl = document.getElementById('trendBars');
+  if (trendData && trendData.length > 0) {
+    const maxR = Math.max(1, ...trendData.map(m => m.rate));
+    trendEl.innerHTML = trendData.map(m => {
+      const h = Math.max(6, Math.round(m.rate / maxR * 52));
+      const isLow = m.rate < currRate;
+      return '<div class="trend-bar-wrap">' +
+        '<div class="trend-val">' + m.rate + '%</div>' +
+        '<div class="trend-bar ' + (isLow?'low':'') + '" style="height:' + h + 'px"></div>' +
+        '<div class="trend-month">' + m.month + '</div>' +
+      '</div>';
+    }).join('');
+  } else {
+    // Fallback: show current month only with note
+    trendEl.innerHTML = '<div class="trend-bar-wrap">' +
+      '<div class="trend-val">' + currRate + '%</div>' +
+      '<div class="trend-bar" style="height:40px"></div>' +
+      '<div class="trend-month">Now</div>' +
+      '</div><div style="font-size:10px;color:#A07850;align-self:center;padding-left:8px">Monthly trend needs API update (see Code.gs)</div>';
+  }
+
+  // ── Retention Funnel: 1st → 2nd → 3rd purchase ──
+  const cohort = d.purchaseCohort || null;
+  if (cohort) {
+    const c1 = cohort.first || 0, c2 = cohort.second || 0, c3 = cohort.third || 0, c4 = cohort.fourPlus || 0;
+    document.getElementById('rf1').textContent = c1.toLocaleString();
+    document.getElementById('rf2').textContent = c2.toLocaleString();
+    document.getElementById('rf3').textContent = c3.toLocaleString();
+    document.getElementById('rf4plus').textContent = c4.toLocaleString();
+    const pct2 = c1>0?Math.round(c2/c1*100):0;
+    const pct3 = c2>0?Math.round(c3/c2*100):0;
+    const pct4 = c3>0?Math.round(c4/c3*100):0;
+    document.getElementById('rf2pct').textContent = pct2+'% retained';
+    document.getElementById('rf2pct').className = 'rs-pct'+(pct2>=30?' good':'');
+    document.getElementById('rf3pct').textContent = pct3+'% of 2nd';
+    document.getElementById('rf3pct').className = 'rs-pct'+(pct3>=50?' good':'');
+    document.getElementById('rf4pct').textContent = pct4+'% loyal';
+    document.getElementById('retFunnelNote').textContent =
+      'Total ' + (c1+c2+c3+c4).toLocaleString() + ' customers · Drop-off tightest at 1st→2nd purchase';
+  } else {
+    // Derive from journeyStages + totalCustomers as rough proxy
+    const activeRepeat = (stages2['ACTIVE']||0);
+    const newTotal = Object.entries(stages2).filter(([k])=>k.startsWith('NEW-')).reduce((s,[,v])=>s+v,0);
+    const churned = (stages2['AT-RISK']||0)+(stages2['CHURNED']||0);
+    const allCustomers = o.totalCustomers || 1;
+    document.getElementById('rf1').textContent = allCustomers.toLocaleString();
+    document.getElementById('rf2').textContent = (allCustomers - newTotal).toLocaleString();
+    document.getElementById('rf3').textContent = activeRepeat.toLocaleString();
+    document.getElementById('rf4plus').textContent = '—';
+    const p2 = Math.round((allCustomers-newTotal)/allCustomers*100);
+    document.getElementById('rf2pct').textContent = p2+'% repeat';
+    document.getElementById('rf2pct').className = 'rs-pct'+(p2>=40?' good':'');
+    document.getElementById('rf3pct').textContent = '—';
+    document.getElementById('rf4pct').textContent = '—';
+    document.getElementById('retFunnelNote').textContent = 'Estimated from journey stages · Add purchaseCohort to API for exact data';
+  }
 
   // ── Layer 3: Tier Growth ──
   document.getElementById('tgRevenue').textContent    = fCRMK(o.totalRevenue || 0);
