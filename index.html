@@ -131,7 +131,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── CRM Dashboard Upgrade ─────────────────────── */
 /* ── CRM Dashboard Upgrade ─────────────────────── */
-.ops-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.ops-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
 .ops-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
 .ops-card .oc-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .ops-card .oc-val{font-size:26px;font-weight:700;color:#3D2B1F;line-height:1}
@@ -166,7 +166,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .near-badge{font-size:10px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap}
 .sec-title{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:6px 0 8px}
 @media(max-width:900px){
-  .ops-grid{grid-template-columns:repeat(2,1fr)}
+  .ops-grid{grid-template-columns:repeat(3,1fr)}
   .funnel-grid{grid-template-columns:1fr}
   .tier-growth-grid{grid-template-columns:1fr}
   .health-row{grid-template-columns:repeat(2,1fr)}
@@ -286,6 +286,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <option value="MY">🇲🇾 Oxy MY</option>
         <option value="SG">🇸🇬 Oxy SG</option>
       </select>
+      <select id="crmPeriod" onchange="loadCRM()" style="padding:6px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:12px;background:white;color:#3D2B1F;font-weight:600">
+        <option value="all">📅 All Time</option>
+        <option value="30">Last 30 Days</option>
+        <option value="90">Last 90 Days</option>
+        <option value="180">Last 6 Months</option>
+        <option value="365">Last 12 Months</option>
+      </select>
       <button class="sync-btn" onclick="loadCRM()">🔄 Refresh</button>
     </div>
   </div>
@@ -295,9 +302,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="ops-grid">
     <div class="ops-card blue">
       <div class="oc-accent"></div>
-      <div class="oc-label">Customers Contacted Today</div>
+      <div class="oc-label">Contacted Today</div>
       <div class="oc-val" id="opsActionVal">—</div>
-      <div class="oc-sub" id="opsActionSub">touched today</div>
+      <div class="oc-sub" id="opsActionSub">via WhatsApp</div>
+    </div>
+    <div class="ops-card" style="border-left:4px solid #8b5cf6;background:#fff">
+      <div class="oc-label" style="color:#8b5cf6">Called Today</div>
+      <div class="oc-val" id="opsCalled">—</div>
+      <div class="oc-sub">via phone call</div>
     </div>
     <div class="ops-card amber">
       <div class="oc-accent"></div>
@@ -939,6 +951,8 @@ async function loadCRM() {
     const country = document.getElementById('crmCountry').value;
     let url = CRM_API + '?action=kpi&t=' + Date.now();
     if (country) url += '&country=' + country;
+    const period = document.getElementById('crmPeriod') ? document.getElementById('crmPeriod').value : 'all';
+    if (period && period !== 'all') url += '&days=' + period;
     const res = await fetch(url);
     const d = await res.json();
     if (d.error) throw new Error(d.error);
@@ -962,8 +976,14 @@ function renderCRM(d) {
 
   // ── Layer 1: Ops ──
   const done  = o.todayDone  || 0;
+  const called = o.todayCalled || 0;
   document.getElementById('opsActionVal').textContent = done.toString();
-  document.getElementById('opsActionSub').textContent = 'customers contacted today';
+  document.getElementById('opsActionSub').textContent = 'via WhatsApp';
+  document.getElementById('opsCalled').textContent = called.toString();
+
+  // Update header label with period
+  const periodEl = document.getElementById('crmPeriod');
+  const periodLabel = periodEl ? periodEl.options[periodEl.selectedIndex].text : 'All Time';
 
   document.getElementById('opsT1Val').textContent = (o.todayT1 || 0).toString();
 
