@@ -328,9 +328,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="ops-card red">
       <div class="oc-accent"></div>
-      <div class="oc-label">Churned — Recoverable</div>
-      <div class="oc-val" id="snapChurnedRev">—</div>
-      <div class="oc-sub" id="snapChurnedSub">12M spent · rescue target</div>
+      <div class="oc-label">AT-RISK Customers</div>
+      <div class="oc-val" id="snapAtRisk">—</div>
+      <div class="oc-sub" id="snapAtRiskSub">past finish date · need rescue</div>
     </div>
     <div class="ops-card amber">
       <div class="oc-accent"></div>
@@ -1110,8 +1110,8 @@ function renderCRM(d) {
   document.getElementById('snapRepeatRate').textContent = mtdRate + '%';
   document.getElementById('snapRepeatSub').textContent  = mtdRepeat + ' / ' + mtdTotal + ' orders this month';
 
-  document.getElementById('snapChurnedRev').textContent = fCRMK(o.churnedRevenue || 0);
-  document.getElementById('snapChurnedSub').textContent = (o.churnedCustomers || 0) + ' churned customers · rescue target';
+  document.getElementById('snapAtRisk').textContent = (o.atRiskCustomers || 0).toLocaleString();
+  document.getElementById('snapAtRiskSub').textContent = (o.atRiskCustomers || 0) + ' customers · 30–90 days past finish';
 
   document.getElementById('snapACV').textContent = 'RM ' + (o.avgCustomerValue || 0).toLocaleString();
 
