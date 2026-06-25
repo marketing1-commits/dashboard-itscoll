@@ -1267,8 +1267,10 @@ function renderCRM(d) {
   const trendEl = document.getElementById('trendBars');
   const trendArr = d.monthlyTrend || [];
   if (trendArr.length > 0) {
-    // Cap display at 100% — values >100% show full bar with orange color
-    const DISPLAY_CAP = 100;
+    // Scale bars against actual max, but clamp >100% visually to full height + orange
+    const validRates = trendArr.flatMap(m => [m.rate||0, Math.min(m.supplyRate||0, 100)]).filter(v => v > 0);
+    const maxR = validRates.length > 0 ? Math.max(...validRates) : 100;
+    const BAR_H = 44;
     const legend = '<div style="display:flex;gap:10px;margin-bottom:6px">' +
       '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px">' +
         '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Standard' +
@@ -1280,23 +1282,21 @@ function renderCRM(d) {
     trendEl.innerHTML = legend + trendArr.map((m, i) => {
       const r1 = m.rate || 0;
       const r2 = m.supplyRate || 0;
-      const noData = m.prev2New === 0;
-      const isEmpty = r1 === 0 && r2 === 0;
+      const noData = !m.prev2New || m.prev2New === 0;
       const over100 = r2 > 100;
-      // Heights capped at DISPLAY_CAP so bars are always proportional
-      const h1 = r1 === 0 ? 4 : Math.max(6, Math.round(Math.min(r1, DISPLAY_CAP) / DISPLAY_CAP * 44));
-      const h2 = noData ? 4 : r2 === 0 ? 4 : Math.max(6, Math.round(Math.min(r2, DISPLAY_CAP) / DISPLAY_CAP * 44));
-      const supplyLabel = noData ? 'No prior month data' : (over100 ? 'Supply-Adj: ' + r2 + '% (>100% — low base month)' : 'Supply-Adj: ' + r2 + '%');
+      // Green bar: scale against maxR
+      const h1 = r1 === 0 ? 3 : Math.max(8, Math.round(r1 / maxR * BAR_H));
+      // Blue/orange bar: if >100% show full height in orange, else scale normally
+      const h2 = noData ? 3 : r2 === 0 ? 3 : over100 ? BAR_H : Math.max(8, Math.round(r2 / maxR * BAR_H));
+      const supplyLabel = noData ? 'No prior month data' : over100 ? r2 + '% — more repeat than new base (low base month)' : r2 + '%';
       const barColor2 = noData ? '#E8D5B0' : over100 ? 'linear-gradient(180deg,#f59e0b,#fbbf24)' : 'linear-gradient(180deg,#3b82f6,#60a5fa)';
-      const valColor2 = noData ? '#E8D5B0' : over100 ? '#f59e0b' : '#3b82f6';
+      const valColor2 = noData ? '#C8B89A' : over100 ? '#f59e0b' : '#3b82f6';
       const displayVal = noData ? '—' : r2 === 0 ? '—' : over100 ? r2 + '%↑' : r2 + '%';
       return '<div class="trend-bar-wrap">' +
-        '<div class="trend-val" style="font-size:8px;color:' + valColor2 + '" title="' + supplyLabel + '">' +
-          displayVal +
-        '</div>' +
-        '<div style="display:flex;gap:1px;align-items:flex-end;height:44px">' +
-          '<div class="trend-bar" style="height:' + h1 + 'px;flex:1;background:linear-gradient(180deg,#10b981,#34d399);opacity:' + (r1===0?0.2:1) + '" title="Standard: ' + r1 + '%"></div>' +
-          '<div class="trend-bar" style="height:' + h2 + 'px;flex:1;background:' + barColor2 + ';opacity:' + (noData||r2===0?0.2:1) + '" title="' + supplyLabel + '"></div>' +
+        '<div class="trend-val" style="font-size:8px;color:' + valColor2 + '" title="' + supplyLabel + '">' + displayVal + '</div>' +
+        '<div style="display:flex;gap:2px;align-items:flex-end;height:' + BAR_H + 'px">' +
+          '<div style="height:' + h1 + 'px;flex:1;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#10b981,#34d399);min-width:4px;opacity:' + (r1===0?0.15:1) + '" title="Standard: ' + r1 + '%"></div>' +
+          '<div style="height:' + h2 + 'px;flex:1;border-radius:3px 3px 0 0;background:' + barColor2 + ';min-width:4px;opacity:' + (noData||r2===0?0.15:1) + '" title="' + supplyLabel + '"></div>' +
         '</div>' +
         '<div class="trend-month">' + m.month + '</div>' +
       '</div>';
