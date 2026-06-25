@@ -334,10 +334,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="sec-title">⚡ Today's Operations</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
     <div class="crm-card" style="margin:0">
-      <h4 style="margin-bottom:10px">📋 Today's Actions</h4>
-      <div style="font-size:26px;font-weight:700;color:#3b82f6" id="todayTotal2">—</div>
-      <div style="font-size:11px;color:#A07850;margin-bottom:8px" id="todayDoneSub">tasks today</div>
-      <div class="today-pills" id="todayPills"></div>
+      <h4 style="margin-bottom:12px">🎯 Today's Priority Actions</h4>
+      <!-- Refill window -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F5E6C8">
+        <div>
+          <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Refill Window</div>
+          <div style="font-size:10px;color:#5C4033;margin-top:1px">T5/T6/T7 + Active — fast approaching</div>
+        </div>
+        <div style="font-size:24px;font-weight:700;color:#10b981" id="refillCount">—</div>
+      </div>
+      <!-- AT-RISK today -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <div>
+          <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">AT-RISK to contact</div>
+          <div style="font-size:10px;color:#5C4033;margin-top:1px">60–90 days · rescue before churn</div>
+        </div>
+        <div style="font-size:24px;font-weight:700;color:#f59e0b" id="atRiskCount2">—</div>
+      </div>
     </div>
     <div class="crm-card" style="margin:0">
       <h4 style="margin-bottom:10px">📈 Monthly Repeat Rate Trend</h4>
@@ -394,10 +407,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="funnel-card">
       <h4>🏆 Tier Distribution</h4>
-      <div style="display:flex;align-items:center;gap:16px">
-        <canvas id="crmTierChart" width="140" height="140" style="flex-shrink:0"></canvas>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <canvas id="crmTierChart" width="120" height="120" style="flex-shrink:0"></canvas>
         <div id="crmTierLegend" style="flex:1"></div>
       </div>
+      <!-- Tier upgrade progress bars -->
+      <div style="border-top:1px solid #F5E6C8;padding-top:10px">
+        <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Upgrade Pipeline</div>
+        <div id="tierUpgradeBars"></div>
+      </div>
+      <!-- Key insight -->
+      <div id="tierInsight" style="margin-top:8px;padding:8px 10px;background:#FFF8EC;border-radius:6px;font-size:11px;color:#5C4033;border-left:3px solid #F5A800"></div>
     </div>
   </div>
 
@@ -917,7 +937,7 @@ async function loadCRM() {
   el.textContent = 'Loading...';
   try {
     const country = document.getElementById('crmCountry').value;
-    let url = CRM_API + '?action=kpi';
+    let url = CRM_API + '?action=kpi&t=' + Date.now();
     if (country) url += '&country=' + country;
     const res = await fetch(url);
     const d = await res.json();
@@ -998,13 +1018,50 @@ function renderCRM(d) {
     options: { responsive: false, plugins: { legend: { display: false } }, cutout: '60%' }
   });
   document.getElementById('crmTierLegend').innerHTML = tierLabels.filter(k => tierData[k] > 0).map(k =>
-    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">' +
-    '<div style="width:11px;height:11px;border-radius:3px;background:' + tierColors[k] + '"></div>' +
-    '<span style="font-size:11px;color:#5C4033">' + k + '</span>' +
-    '<b style="font-size:12px;color:#3D2B1F">' + tierData[k] + '</b>' +
-    '<span style="font-size:10px;color:#A07850">(' + (o.totalCustomers > 0 ? Math.round(tierData[k]/o.totalCustomers*100) : 0) + '%)</span>' +
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
+    '<div style="width:10px;height:10px;border-radius:3px;background:' + tierColors[k] + '"></div>' +
+    '<span style="font-size:11px;color:#5C4033;min-width:55px">' + k + '</span>' +
+    '<b style="font-size:13px;color:#3D2B1F;min-width:32px">' + tierData[k] + '</b>' +
+    '<span style="font-size:10px;color:#A07850">' + (o.totalCustomers > 0 ? Math.round(tierData[k]/o.totalCustomers*100) : 0) + '%</span>' +
     '</div>'
   ).join('');
+
+  // ── Tier upgrade pipeline bars ──
+  const tierUpgradeDef = [
+    { from:'Bronze', to:'Silver', threshold:1000, color:'#CD7F32' },
+    { from:'Silver', to:'Gold',   threshold:2000, color:'#A8A9AD' },
+    { from:'Gold',   to:'Platinum',threshold:4000, color:'#D4951B' },
+  ];
+  const bronzeTopCount = (d.bronzeTopList||[]).length;
+  document.getElementById('tierUpgradeBars').innerHTML = tierUpgradeDef.map(t => {
+    const count = tierData[t.from] || 0;
+    if (count === 0) return '';
+    const pct = Math.min(100, Math.round(count / (o.totalCustomers||1) * 100));
+    return '<div style="margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
+        '<span style="font-size:10px;color:#5C4033;font-weight:600">' + t.from + ' → ' + t.to + '</span>' +
+        '<span style="font-size:10px;color:#A07850">' + count + ' customers · RM' + t.threshold + ' threshold</span>' +
+      '</div>' +
+      '<div style="height:6px;background:#F5E6C8;border-radius:3px;overflow:hidden">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + t.color + ';border-radius:3px"></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // ── Tier insight ──
+  const bronzeCount2 = tierData['Bronze'] || 0;
+  const silverCount  = tierData['Silver'] || 0;
+  const bronzePct2   = o.totalCustomers > 0 ? Math.round(bronzeCount2/o.totalCustomers*100) : 0;
+  const nearSilverCount = (d.bronzeTopList||[]).filter(c => c.gapToSilver <= 100).length;
+  let insightText = '';
+  if (nearSilverCount > 0) {
+    insightText = '🎯 ' + nearSilverCount + ' Bronze customers within RM100 of Silver — priority upgrade targets this week';
+  } else if (bronzePct2 > 80) {
+    insightText = '⚠️ ' + bronzePct2 + '% customers still Bronze — Silver upgrade campaign needed to improve LTV';
+  } else {
+    insightText = '✅ Tier mix improving · ' + silverCount + ' Silver customers driving repeat revenue';
+  }
+  document.getElementById('tierInsight').textContent = insightText;
 
   // ── Bronze Banner ──
   const tierD = d.tierDistribution || {};
@@ -1016,22 +1073,12 @@ function renderCRM(d) {
     bronzeCount + ' 客户在 Bronze 层 · Silver 门槛 RM1,000 (12M spent)';
 
   // ── Today's Actions Breakdown (new) ──
-  const todayDone2  = o.todayDone  || 0;
-  const todayT1c    = o.todayT1    || 0;
-  document.getElementById('todayTotal2').textContent = todayDone2.toString();
-  document.getElementById('todayDoneSub').textContent = 'customers contacted today';
   const stages2 = d.journeyStages || {};
-  const refillCount = (stages2['NEW-T5']||0)+(stages2['NEW-T6']||0)+(stages2['NEW-T7']||0)+(stages2['ACTIVE']||0);
-  const atRiskCount = stages2['AT-RISK'] || 0;
-  const pills = [
-    {label:'T1 New: '+todayT1c, bg:'#3b82f6'},
-    {label:'Refill: '+Math.min(refillCount,70), bg:'#10b981'},
-    {label:'AT-RISK: '+Math.min(atRiskCount,30), bg:'#f59e0b'},
-    {label:'Churned: '+Math.min(stages2['CHURNED']||0,10), bg:'#ef4444'},
-  ];
-  document.getElementById('todayPills').innerHTML = pills.map(p =>
-    '<div class="today-pill" style="background:'+p.bg+'">'+p.label+'</div>'
-  ).join('');
+  const refillTotal = (stages2['NEW-T5']||0)+(stages2['NEW-T6']||0)+(stages2['NEW-T7']||0)+(stages2['ACTIVE']||0);
+  const atRiskTotal = stages2['AT-RISK'] || 0;
+  // Apply bucket caps (same as Action List logic)
+  document.getElementById('refillCount').textContent = Math.min(refillTotal, 70).toString();
+  document.getElementById('atRiskCount2').textContent = Math.min(atRiskTotal, 30).toString();
 
   // ── Monthly Repeat Rate Trend (derived from journeyStages as proxy) ──
   // We'll use a 6-month rolling from todayTotal/repeatOrders data
