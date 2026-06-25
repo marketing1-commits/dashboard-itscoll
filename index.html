@@ -198,6 +198,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .today-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .today-pill{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#fff}
 
+
+/* ── CS Activity block ── */
+.cs-activity{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:16px;margin-bottom:14px}
+.cs-period-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.cs-tab{padding:5px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:11px;cursor:pointer;color:#A07850;background:#FFF8EC;transition:.15s;font-weight:600}
+.cs-tab.active{background:#F5A800;border-color:#F5A800;color:#fff}
+.cs-custom-range{display:none;gap:6px;align-items:center;margin-left:4px}
+.cs-custom-range.show{display:flex}
+.cs-custom-range input{padding:4px 8px;border:1px solid #E8D5B0;border-radius:5px;font-size:11px;color:#3D2B1F;background:#FFF8EC}
+.cs-custom-range button{padding:4px 10px;background:#F5A800;border:none;border-radius:5px;font-size:11px;color:#fff;cursor:pointer;font-weight:600}
+.cs-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.cs-metric{background:#FFF8EC;border-radius:8px;padding:12px 14px;text-align:center}
+.cs-metric .cm-val{font-size:28px;font-weight:700;color:#3D2B1F}
+.cs-metric .cm-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.cs-metric .cm-icon{font-size:16px;margin-bottom:4px}
+.cs-sparkline{display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:4px}
+.cs-spark-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.cs-spark-bar-row{display:flex;gap:1px;align-items:flex-end;width:100%;height:40px}
+.cs-spark-contacted{border-radius:2px 2px 0 0;background:#F5A800;min-height:2px;flex:1}
+.cs-spark-called{border-radius:2px 2px 0 0;background:#8b5cf6;min-height:2px;flex:1}
+.cs-spark-date{font-size:8px;color:#A07850;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+.cs-legend{display:flex;gap:12px;justify-content:flex-end;margin-bottom:6px}
+.cs-legend span{font-size:10px;color:#5C4033;display:flex;align-items:center;gap:4px}
+.cs-legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:2px}
+.cs-legend .lg-contacted::before{background:#F5A800}
+.cs-legend .lg-called::before{background:#8b5cf6}
+
 </style>
 </head>
 <body>
@@ -326,6 +353,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <!-- LAYER 2: RETENTION HEALTH -->
+  <!-- CS Activity Tracker -->
+  <div class="cs-activity">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:#3D2B1F">👩‍💼 CS Activity Tracker</div>
+      <div style="font-size:10px;color:#A07850" id="csLastUpdated">—</div>
+    </div>
+    <!-- Period tabs -->
+    <div class="cs-period-tabs">
+      <button class="cs-tab active" onclick="setCSPeriod('today',this)">Today</button>
+      <button class="cs-tab" onclick="setCSPeriod('week',this)">This Week</button>
+      <button class="cs-tab" onclick="setCSPeriod('month',this)">This Month</button>
+      <button class="cs-tab" onclick="setCSPeriod('custom',this)">Custom</button>
+      <div class="cs-custom-range" id="csCustomRange">
+        <input type="date" id="csFrom" />
+        <span style="font-size:11px;color:#A07850">to</span>
+        <input type="date" id="csTo" />
+        <button onclick="loadCSActivity()">Go</button>
+      </div>
+    </div>
+    <!-- Metrics -->
+    <div class="cs-metrics">
+      <div class="cs-metric">
+        <div class="cm-icon">💬</div>
+        <div class="cm-val" id="csContacted">—</div>
+        <div class="cm-label">Contacted (WhatsApp)</div>
+      </div>
+      <div class="cs-metric">
+        <div class="cm-icon">📞</div>
+        <div class="cm-val" id="csCalled">—</div>
+        <div class="cm-label">Called (Phone)</div>
+      </div>
+      <div class="cs-metric" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2)">
+        <div class="cm-icon">🎯</div>
+        <div class="cm-val" id="csTotal">—</div>
+        <div class="cm-label">Total Touchpoints</div>
+      </div>
+    </div>
+    <!-- Daily sparkline -->
+    <div class="cs-legend">
+      <span class="lg-contacted">Contacted</span>
+      <span class="lg-called">Called</span>
+    </div>
+    <div class="cs-sparkline" id="csSparkline">
+      <div style="color:#A07850;font-size:11px;align-self:center">Loading...</div>
+    </div>
+  </div>
+
   <!-- Bronze → Silver Banner (biggest opportunity) -->
   <div class="bronze-banner" id="bronzeBanner">
     <div class="bb-pct" id="bronzePct">—%</div>
@@ -932,11 +1006,99 @@ function switchTab(tab) {
   document.getElementById(tab + 'Tab').classList.add('active');
   event.target.classList.add('active');
   if (tab === 'crm' && !window._crmLoaded) loadCRM();
+  if (tab === 'crm') loadCSActivity();
 }
 
 // ─── CRM DASHBOARD ──────────────────────────────────────────
 const CRM_API = 'https://script.google.com/macros/s/AKfycbwT4aFsvIjZQm0y8VSek0ZfG3g53ZsHK_AgfFQr0amWjb5w2AZkgWgiGpl5QY2mRrtT/exec';
 let crmTierChart;
+
+// ── CS Activity ──────────────────────────────────────────────────────────────
+let _csPeriod = 'today';
+
+function setCSPeriod(period, btn) {
+  _csPeriod = period;
+  document.querySelectorAll('.cs-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const customRange = document.getElementById('csCustomRange');
+  if (period === 'custom') {
+    customRange.classList.add('show');
+    // Set default range: last 7 days
+    const today = new Date();
+    const week  = new Date(today); week.setDate(today.getDate() - 6);
+    document.getElementById('csFrom').value = week.toISOString().slice(0,10);
+    document.getElementById('csTo').value   = today.toISOString().slice(0,10);
+  } else {
+    customRange.classList.remove('show');
+    loadCSActivity();
+  }
+}
+
+function getCSDateRange() {
+  const now   = new Date();
+  const today = now.toISOString().slice(0,10);
+  if (_csPeriod === 'today') return { from: today, to: today };
+  if (_csPeriod === 'week') {
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay() + (now.getDay()===0?-6:1)); // Mon
+    return { from: start.toISOString().slice(0,10), to: today };
+  }
+  if (_csPeriod === 'month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: start.toISOString().slice(0,10), to: today };
+  }
+  if (_csPeriod === 'custom') {
+    return {
+      from: document.getElementById('csFrom').value,
+      to:   document.getElementById('csTo').value
+    };
+  }
+  return { from: today, to: today };
+}
+
+async function loadCSActivity() {
+  document.getElementById('csContacted').textContent = '…';
+  document.getElementById('csCalled').textContent    = '…';
+  document.getElementById('csTotal').textContent     = '…';
+  try {
+    const { from, to } = getCSDateRange();
+    const country = document.getElementById('crmCountry').value;
+    let url = CRM_API + '?action=cs_activity&t=' + Date.now();
+    if (from) url += '&from=' + from;
+    if (to)   url += '&to='   + to;
+    if (country) url += '&country=' + country;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('csContacted').textContent = data.contacted.toLocaleString();
+    document.getElementById('csCalled').textContent    = data.called.toLocaleString();
+    document.getElementById('csTotal').textContent     = data.total.toLocaleString();
+    document.getElementById('csLastUpdated').textContent = 'Updated ' + data.lastUpdated;
+    // Sparkline
+    const daily = data.daily || [];
+    const el    = document.getElementById('csSparkline');
+    if (daily.length === 0) {
+      el.innerHTML = '<div style="color:#A07850;font-size:11px;align-self:center">No activity in this period</div>';
+      return;
+    }
+    const maxVal = Math.max(1, ...daily.map(d => (d.contacted||0) + (d.called||0)));
+    el.innerHTML = daily.map(d => {
+      const cH = Math.max(2, Math.round((d.contacted||0) / maxVal * 38));
+      const kH = Math.max(2, Math.round((d.called||0)    / maxVal * 38));
+      const label = d.date.slice(5); // MM-DD
+      return '<div class="cs-spark-wrap">' +
+        '<div class="cs-spark-bar-row">' +
+          (d.contacted ? '<div class="cs-spark-contacted" style="height:' + cH + 'px" title="Contacted: ' + d.contacted + '"></div>' : '') +
+          (d.called    ? '<div class="cs-spark-called"    style="height:' + kH + 'px" title="Called: '    + d.called    + '"></div>' : '') +
+        '</div>' +
+        '<div class="cs-spark-date">' + label + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('csContacted').textContent = 'Err';
+    document.getElementById('csLastUpdated').textContent = e.message;
+  }
+}
 
 async function loadCRM() {
   const el = document.getElementById('crmUpdated');
