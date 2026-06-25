@@ -317,26 +317,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- ① TODAY'S SNAPSHOT -->
-  <div class="sec-title">⚡ Today's Snapshot</div>
+  <!-- ① KEY METRICS SNAPSHOT -->
+  <div class="sec-title">📌 Key Metrics</div>
   <div class="ops-grid" style="margin-bottom:14px">
-    <div class="ops-card amber">
+    <div class="ops-card blue">
       <div class="oc-accent"></div>
-      <div class="oc-label">T1 New Customers</div>
-      <div class="oc-val" id="opsT1Val">—</div>
-      <div class="oc-sub">arrived today (no cap)</div>
+      <div class="oc-label">Repeat Rate (MTD)</div>
+      <div class="oc-val" id="snapRepeatRate">—</div>
+      <div class="oc-sub" id="snapRepeatSub">repeat orders this month</div>
     </div>
     <div class="ops-card red">
       <div class="oc-accent"></div>
-      <div class="oc-label">AT-RISK Revenue</div>
-      <div class="oc-val" id="opsRiskVal">—</div>
-      <div class="oc-sub" id="opsRiskSub">12M spent at risk</div>
+      <div class="oc-label">Churned — Recoverable</div>
+      <div class="oc-val" id="snapChurnedRev">—</div>
+      <div class="oc-sub" id="snapChurnedSub">12M spent · rescue target</div>
     </div>
-    <div class="ops-card purple">
+    <div class="ops-card amber">
       <div class="oc-accent"></div>
-      <div class="oc-label">Birthdays</div>
-      <div class="oc-val" id="opsBdayVal">—</div>
-      <div class="oc-sub" id="opsBdaySub">this week</div>
+      <div class="oc-label">Avg Customer Value</div>
+      <div class="oc-val" id="snapACV">—</div>
+      <div class="oc-sub">lifetime spend per customer</div>
     </div>
   </div>
 
@@ -1102,17 +1102,18 @@ function renderCRM(d) {
   const done  = o.todayDone  || 0;
   // todayDone and todayCalled now shown in CS Activity Tracker only
 
+  // ── Key Metrics Snapshot ──
+  const trendNow  = (d.monthlyTrend || []).slice(-1)[0];
+  const mtdRate   = trendNow ? trendNow.rate   : (o.repeatRate   || 0);
+  const mtdRepeat = trendNow ? trendNow.repeat  : (o.repeatOrders || 0);
+  const mtdTotal  = trendNow ? trendNow.total   : (o.totalOrders  || 0);
+  document.getElementById('snapRepeatRate').textContent = mtdRate + '%';
+  document.getElementById('snapRepeatSub').textContent  = mtdRepeat + ' / ' + mtdTotal + ' orders this month';
 
+  document.getElementById('snapChurnedRev').textContent = fCRMK(o.churnedRevenue || 0);
+  document.getElementById('snapChurnedSub').textContent = (o.churnedCustomers || 0) + ' churned customers · rescue target';
 
-  document.getElementById('opsT1Val').textContent = (o.todayT1 || 0).toString();
-
-  document.getElementById('opsRiskVal').textContent = fCRMK(o.atRiskRevenue || 0);
-  document.getElementById('opsRiskSub').textContent = (o.atRiskCustomers || 0) + ' customers · 12M spent at risk';
-
-  const bdayToday = o.birthdayToday || 0;
-  const bdayWeek  = o.birthdayWeek  || 0;
-  document.getElementById('opsBdayVal').textContent = bdayToday > 0 ? '🎂 ' + bdayToday : bdayWeek.toString();
-  document.getElementById('opsBdaySub').textContent = bdayToday > 0 ? bdayWeek + ' this week total' : 'birthdays this week';
+  document.getElementById('snapACV').textContent = 'RM ' + (o.avgCustomerValue || 0).toLocaleString();
 
   // ── Layer 2: Health ──
   document.getElementById('hRepeat').textContent   = (o.repeatRate || 0) + '%';
