@@ -475,9 +475,9 @@ function render() {
   const aov = d.orders > 0 ? d.sales / d.orders : 0;
   $('k4').textContent = fRM(aov);
 
-  const cpm = d.msgs > 0 ? d.spend / d.msgs : 0;
-  $('k5').textContent = d.msgs > 0 ? fRM(cpm) : '—';
-  $('k5s').textContent = 'Per Message';
+  const cpm = d.spend > 0 ? d.msgs / d.spend : 0;
+  $('k5').textContent = d.spend > 0 ? cpm.toFixed(2) : '—';
+  $('k5s').textContent = 'Msgs / Ads Spent';
 
   const cvr = d.msgs > 0 ? d.orders / d.msgs * 100 : 0;
   $('k6').textContent = d.msgs > 0 ? cvr.toFixed(1) + '%' : '—';
