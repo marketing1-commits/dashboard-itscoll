@@ -465,19 +465,19 @@ function render() {
   if($('scOrd')) $('scOrd').textContent = d.orders.toLocaleString();
 
   // Ads: show SST-inclusive spend, but Cost/Msg and ROAS use raw spend
-  const displaySpend = d.spend * SST;
+  const displaySpend = d.spendSST;
   $('k2').textContent = displaySpend > 0 ? fRM(displaySpend) : 'RM0.00';
   $('k2s').textContent = d.msgs + ' msgs';
 
-  const roas = d.spend > 0 ? d.sales / (d.spend * SST) : 0;
-  $('k3').textContent = d.spend > 0 ? roas.toFixed(2) + 'x' : '—';
+  const roas = d.spendSST > 0 ? d.sales / d.spendSST : 0;
+  $('k3').textContent = d.spendSST > 0 ? roas.toFixed(2) + 'x' : '—';
 
   const aov = d.orders > 0 ? d.sales / d.orders : 0;
   $('k4').textContent = fRM(aov);
 
-  const cpm = d.spend > 0 ? d.msgs / d.spend : 0;
-  $('k5').textContent = d.spend > 0 ? cpm.toFixed(2) : '—';
-  $('k5s').textContent = d.spend > 0 ? 'msgs per RM spent' : 'Per Message';
+  const cpm = d.spendSST > 0 ? d.msgs / d.spendSST : 0;
+  $('k5').textContent = d.spendSST > 0 ? cpm.toFixed(2) : '—';
+  $('k5s').textContent = 'Msgs / Ads Spent';
 
   const cvr = d.msgs > 0 ? d.orders / d.msgs * 100 : 0;
   $('k6').textContent = d.msgs > 0 ? cvr.toFixed(1) + '%' : '—';
