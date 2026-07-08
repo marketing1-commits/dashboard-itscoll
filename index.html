@@ -39,13 +39,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tgt .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .tgt .hd h3{font-size:12px;color:#A07850;text-transform:uppercase;letter-spacing:1px}
 .tgt .hd .pct{font-size:16px;font-weight:700;color:#10b981}
-.tgt .bar{height:8px;background:#F5E6C8;border-radius:4px;overflow:hidden;margin-bottom:8px}
-.tgt .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#F5A800,#10b981);transition:width .5s}
+.tgt .bar{height:8px;background:#F5E6C8;border-radius:4px;margin-bottom:8px;position:relative}
+.tgt .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#F5A800,#10b981);transition:width .6s cubic-bezier(.4,0,.2,1)}
 .tgt .info{display:flex;justify-content:space-between;font-size:11px;color:#A07850;flex-wrap:wrap;gap:4px}
 .tgt .info .achieved{color:#10b981}
 .tgt .info .gap{color:#f59e0b}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.kpi{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.kpi{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px;position:relative;transition:transform .18s ease,box-shadow .18s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(160,120,80,.14)}
+.mom{position:absolute;top:12px;right:12px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.2px}
+.mom-up{background:rgba(16,185,129,.12);color:#0d9c6d}
+.mom-down{background:rgba(239,68,68,.12);color:#dc2626}
+.mom-flat{background:rgba(160,120,80,.1);color:#A07850}
+.pace-mark{position:absolute;top:-3px;bottom:-3px;width:2.5px;background:#a855f7;border-radius:2px;box-shadow:0 0 4px rgba(168,85,247,.5);transition:left .5s}
+.pace-tag{font-weight:700;padding:1px 8px;border-radius:20px;font-size:11px}
+.pace-ahead{background:rgba(16,185,129,.12);color:#0d9c6d}
+.pace-behind{background:rgba(239,68,68,.1);color:#dc2626}
 .kpi .icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px}
 .kpi .icon.cyan{background:rgba(0,240,255,.12);color:#F5A800}
 .kpi .icon.green{background:rgba(16,185,129,.12);color:#10b981}
@@ -198,8 +207,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <body>
 <div class="top">
   <div style="display:flex;align-items:center;gap:12px">
-    <span style="font-size:20px">💊</span>
-    <span class="sub" style="color:#A07850;font-size:11px;">itsColl · Analytics Dashboard</span>
+    <img src="data:image/png;base64,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" alt="itsColl Wellness" style="height:34px;width:auto;display:block">
+    <span class="sub" style="color:#A07850;font-size:11px;">· Analytics Dashboard</span>
   </div>
   <div class="top-right">
     <span class="last-updated" id="lastUpdated"><span class="status-dot loading" id="statusDot"></span>Loading...</span>
@@ -231,11 +240,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px;align-items:stretch">
     <div class="tgt" style="margin-bottom:0">
       <div class="hd"><h3 id="tgtTitle">TARGET</h3><div class="pct" id="tgtPct">0%</div></div>
-      <div class="bar"><div class="fill" id="tgtFill" style="width:0%"></div></div>
+      <div class="bar"><div class="fill" id="tgtFill" style="width:0%"></div><div class="pace-mark" id="paceMark" style="left:0%;display:none"></div></div>
       <div class="info">
         <span>Achieved: <b id="tgtAch">RM0.00</b> / <span id="tgtOf">RM0</span></span>
         <span class="gap">Gap: <b id="tgtGap">RM0.00</b></span>
         <span style="color:#a855f7">Daily Optimum: <b id="tgtDaily">—</b></span>
+        <span id="tgtPace"></span>
         <span class="achieved" id="tgtStatus"></span>
       </div>
     </div>
@@ -247,14 +257,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
   <div class="kpis">
-    <div class="kpi"><div class="icon cyan">$</div><div class="label">Sales</div><div class="val" id="k1">—</div><div class="sub" id="k1s"></div></div>
-    <div class="kpi"><div class="icon purple">⟡</div><div class="label">Ads Spent (incl. SST & WT)</div><div class="val" id="k2">—</div><div class="sub" id="k2s"></div></div>
-    <div class="kpi"><div class="icon green">↗</div><div class="label">ROAS</div><div class="val" id="k3">—</div><div class="sub" id="k3s">Sales / (Spend × 1.16)</div></div>
-    <div class="kpi"><div class="icon orange">◎</div><div class="label">AOV</div><div class="val" id="k4">—</div><div class="sub" id="k4s">Per Order</div></div>
-    <div class="kpi"><div class="icon pink">●</div><div class="label">Cost / Msg</div><div class="val" id="k5">—</div><div class="sub" id="k5s">Per Message</div></div>
-    <div class="kpi"><div class="icon blue">%</div><div class="label">CVR</div><div class="val" id="k6">—</div><div class="sub" id="k6s">Orders / Msgs</div></div>
-    <div class="kpi"><div class="icon cyan">✉</div><div class="label">Total Messages</div><div class="val" id="scMsg">—</div><div class="sub">Inquiries</div></div>
-    <div class="kpi"><div class="icon green">◈</div><div class="label">Total Orders</div><div class="val" id="scOrd">—</div><div class="sub">All Channels</div></div>
+    <div class="kpi"><span class="mom" id="k1m"></span><div class="icon cyan">$</div><div class="label">Sales</div><div class="val" id="k1">—</div><div class="sub" id="k1s"></div></div>
+    <div class="kpi"><span class="mom" id="k2m"></span><div class="icon purple">⟡</div><div class="label">Ads Spent (incl. SST & WT)</div><div class="val" id="k2">—</div><div class="sub" id="k2s"></div></div>
+    <div class="kpi"><span class="mom" id="k3m"></span><div class="icon green">↗</div><div class="label">ROAS</div><div class="val" id="k3">—</div><div class="sub" id="k3s">Sales / (Spend × 1.16)</div></div>
+    <div class="kpi"><span class="mom" id="k4m"></span><div class="icon orange">◎</div><div class="label">AOV</div><div class="val" id="k4">—</div><div class="sub" id="k4s">Per Order</div></div>
+    <div class="kpi"><span class="mom" id="k5m"></span><div class="icon pink">●</div><div class="label">Cost / Msg</div><div class="val" id="k5">—</div><div class="sub" id="k5s">Per Message</div></div>
+    <div class="kpi"><span class="mom" id="k6m"></span><div class="icon blue">%</div><div class="label">CVR</div><div class="val" id="k6">—</div><div class="sub" id="k6s">Orders / Msgs</div></div>
+    <div class="kpi"><span class="mom" id="k7m"></span><div class="icon cyan">✉</div><div class="label">Total Messages</div><div class="val" id="scMsg">—</div><div class="sub">Inquiries</div></div>
+    <div class="kpi"><span class="mom" id="k8m"></span><div class="icon green">◈</div><div class="label">Total Orders</div><div class="val" id="scOrd">—</div><div class="sub">All Channels</div></div>
   </div>
   <div class="chart-box"><h3 id="chartTitle">Daily Sales Trend</h3><div class="chart-wrap"><canvas id="dc"></canvas></div></div>
   <div class="bottom-grid">
@@ -641,6 +651,44 @@ function agg() {
   return {sales, orders, spend, spendSST, msgs, ch, st, ct, daily, tgt, proj};
 }
 
+// ─── MoM COMPARISON HELPERS ──────────────────────────────────────────────────
+// Lightweight totals for an arbitrary ts range (no breakdowns)
+function aggRange(fromTs, toTs, keys) {
+  let sales=0, orders=0, spend=0, spendSST=0, msgs=0;
+  keys.forEach(k => {
+    for (const r of (IDX[k] || [])) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      sales += r.amount; orders++;
+    }
+    for (const r of (IDX_ADS[k] || [])) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      spend += r.spend; spendSST += r.spendSST; msgs += r.msgs;
+    }
+  });
+  return {sales, orders, spend, spendSST, msgs};
+}
+
+// Shift a YYYY-MM-DD string back one month (clamped to month length)
+function shiftMonthBack(s) {
+  const y = +s.slice(0,4), m = +s.slice(5,7)-1, d = +s.slice(8,10);
+  const pm = m - 1 < 0 ? 11 : m - 1;
+  const py = m - 1 < 0 ? y - 1 : y;
+  const maxD = new Date(py, pm + 1, 0).getDate();
+  return localDateStr(new Date(py, pm, Math.min(d, maxD)));
+}
+
+// Build a MoM badge: cur vs prev. invert=true → lower is better (costs)
+function momBadge(cur, prev, invert) {
+  if (!isFinite(prev) || prev === 0) return '';
+  const chg = (cur - prev) / prev * 100;
+  if (!isFinite(chg)) return '';
+  if (Math.abs(chg) < 0.05) return '<span class="mom-flat">— 0%</span>';
+  const up = chg > 0;
+  const good = invert ? !up : up;
+  const cls = good ? 'mom-up' : 'mom-down';
+  return '<span class="' + cls + '" title="vs last month same period">' + (up?'↑':'↓') + ' ' + Math.abs(chg).toFixed(1) + '%</span>';
+}
+
 // ─── RENDER ──────────────────────────────────────────────────────────────────
 let chart = null, pieChart = null, stateChart = null;
 let ctSales = {};
@@ -654,6 +702,14 @@ function fRMK(v) {
 function render() {
   const d = agg();
 
+  // ── Previous month same period (for MoM badges) ──
+  const fromStr = $('df').value, toStr = $('dt').value;
+  let pv = null;
+  if (fromStr && toStr) {
+    const pFrom = shiftMonthBack(fromStr), pTo = shiftMonthBack(toStr);
+    pv = aggRange(dateStrToTs(pFrom), dateStrToTs(pTo), pKeys($('ps').value));
+  }
+
   $('k1').textContent = fRM(d.sales);
   $('k1s').textContent = d.orders + ' orders';
   if($('scMsg')) $('scMsg').textContent = d.msgs.toLocaleString();
@@ -665,6 +721,8 @@ function render() {
 
   const roas = d.spendSST > 0 ? d.sales / d.spendSST : 0;
   $('k3').textContent = d.spendSST > 0 ? roas.toFixed(2) + 'x' : '—';
+  // ROAS traffic-light: ≥3 green · 2–3 amber · <2 red
+  $('k3').style.color = d.spendSST > 0 ? (roas >= 3 ? '#10b981' : roas >= 2 ? '#f59e0b' : '#ef4444') : '';
 
   const aov = d.orders > 0 ? d.sales / d.orders : 0;
   $('k4').textContent = fRM(aov);
@@ -674,6 +732,22 @@ function render() {
 
   const cvr = d.msgs > 0 ? d.orders / d.msgs * 100 : 0;
   $('k6').textContent = d.msgs > 0 ? cvr.toFixed(1) + '%' : '—';
+
+  // ── MoM badges (vs last month same period) ──
+  if (pv) {
+    const pRoas = pv.spendSST > 0 ? pv.sales / pv.spendSST : 0;
+    const pAov  = pv.orders   > 0 ? pv.sales / pv.orders   : 0;
+    const pCpm  = pv.msgs     > 0 ? pv.spend / pv.msgs     : 0;
+    const pCvr  = pv.msgs     > 0 ? pv.orders / pv.msgs*100: 0;
+    if($('k1m')) $('k1m').innerHTML = momBadge(d.sales, pv.sales);
+    if($('k2m')) $('k2m').innerHTML = momBadge(d.spendSST, pv.spendSST, true);
+    if($('k3m')) $('k3m').innerHTML = momBadge(roas, pRoas);
+    if($('k4m')) $('k4m').innerHTML = momBadge(aov, pAov);
+    if($('k5m')) $('k5m').innerHTML = momBadge(cpm, pCpm, true);
+    if($('k6m')) $('k6m').innerHTML = momBadge(cvr, pCvr);
+    if($('k7m')) $('k7m').innerHTML = momBadge(d.msgs, pv.msgs);
+    if($('k8m')) $('k8m').innerHTML = momBadge(d.orders, pv.orders);
+  }
 
   const pct = d.tgt > 0 ? (d.sales / d.tgt * 100) : 0;
   const gap = Math.max(0, d.tgt - d.sales);
@@ -705,7 +779,29 @@ function render() {
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     $('esomMonth').textContent = monthNames[curM] + ' ' + curY;
     $('esomVal').textContent   = fRM(esom);
+    // Green when projection clears target, amber otherwise
+    $('esomVal').style.color   = (d.tgt > 0 && esom >= d.tgt) ? '#10b981' : '#F5A800';
     $('esomSub').textContent   = 'Day ' + dayOfMonth + ' of ' + daysInMonth + ' · ' + fRM(esomSales) + ' MTD';
+
+    // ── Pace indicator: expected MTD vs actual MTD ──
+    if ($('tgtPace') && $('paceMark')) {
+      const viewingThisMonth = $('df').value === localDateStr(new Date(curY, curM, 1));
+      if (d.tgt > 0 && viewingThisMonth) {
+        const pacePct   = dayOfMonth / daysInMonth * 100;
+        const expected  = d.tgt * dayOfMonth / daysInMonth;
+        const diff      = esomSales - expected;
+        $('paceMark').style.display = 'block';
+        $('paceMark').style.left = pacePct.toFixed(1) + '%';
+        $('paceMark').title = 'Expected by Day ' + dayOfMonth + ': ' + fRM(expected);
+        const tag = diff >= 0
+          ? '<span class="pace-tag pace-ahead" title="Expected ' + fRM(expected) + ' by today">🚀 Ahead ' + fRMK(diff) + '</span>'
+          : '<span class="pace-tag pace-behind" title="Expected ' + fRM(expected) + ' by today">🐢 Behind ' + fRMK(-diff) + '</span>';
+        $('tgtPace').innerHTML = tag;
+      } else {
+        $('paceMark').style.display = 'none';
+        $('tgtPace').innerHTML = '';
+      }
+    }
   }
 
   if ($('tgtDaily')) {
