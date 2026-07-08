@@ -125,9 +125,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .crm-table th{padding:8px;text-align:left;color:#A07850;font-weight:600;border-bottom:2px solid #F0E6D3}
 .crm-table td{padding:8px;border-bottom:1px solid #F5EDE3}
 @media(max-width:900px){.crm-kpis{grid-template-columns:repeat(2,1fr)}.crm-charts{grid-template-columns:1fr}}
+.mini-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.mini-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:12px 14px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.mini-card:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(160,120,80,.15)}
+.mini-card .mc-name{font-size:10px;color:#A07850;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.mini-card .mc-sales{font-size:19px;font-weight:700;color:#3D2B1F}
+.mini-card .mc-row{display:flex;justify-content:space-between;font-size:10.5px;color:#A07850;margin-top:4px}
+.mini-card .mc-bar{height:4px;background:#F5E6C8;border-radius:2px;margin-top:6px;overflow:hidden}
+.mini-card .mc-bar div{height:100%;background:linear-gradient(90deg,#F5A800,#10b981);border-radius:2px}
+@media(max-width:900px){.mini-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){
+  #tgtRow{grid-template-columns:1fr!important}
+  .ctrl{gap:8px}
+  .ctrl select,.ctrl input{max-width:130px}
+  .presets{width:100%;display:flex;flex-wrap:wrap;gap:4px}
+}
 @media(max-width:500px){
   .kpis{grid-template-columns:1fr 1fr}
+  .kpi{padding:12px}
+  .kpi .val{font-size:18px}
+  .mom{top:9px;right:9px;font-size:9.5px}
   .top h1 .sub{display:none}
+  .main{padding:12px}
+  .mini-card .mc-sales{font-size:16px}
 }
 .ops-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .ops-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
@@ -212,6 +232,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="top-right">
     <span class="last-updated" id="lastUpdated"><span class="status-dot loading" id="statusDot"></span>Loading...</span>
+    <button class="sync-btn" id="waBtn" onclick="copyWAReport()" title="Copy today's numbers as WhatsApp-ready text">📋 日报</button>
     <button class="sync-btn" id="syncBtn" onclick="fetchData(true)">↻ Sync</button>
   </div>
 </div>
@@ -237,7 +258,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="dp" data-p="ytd">YTD</button>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px;align-items:stretch">
+  <div id="tgtRow" style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px;align-items:stretch">
     <div class="tgt" style="margin-bottom:0">
       <div class="hd"><h3 id="tgtTitle">TARGET</h3><div class="pct" id="tgtPct">0%</div></div>
       <div class="bar"><div class="fill" id="tgtFill" style="width:0%"></div><div class="pace-mark" id="paceMark" style="left:0%;display:none"></div></div>
@@ -246,6 +267,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <span class="gap">Gap: <b id="tgtGap">RM0.00</b></span>
         <span style="color:#a855f7">Daily Optimum: <b id="tgtDaily">—</b></span>
         <span id="tgtPace"></span>
+        <span id="tgtStreak"></span>
         <span class="achieved" id="tgtStatus"></span>
       </div>
     </div>
@@ -256,6 +278,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div style="font-size:10px;color:#A07850" id="esomSub">Est. End of Month</div>
     </div>
   </div>
+  <div class="mini-cards" id="miniCards" style="display:none"></div>
   <div class="kpis">
     <div class="kpi"><span class="mom" id="k1m"></span><div class="icon cyan">$</div><div class="label">Sales</div><div class="val" id="k1">—</div><div class="sub" id="k1s"></div></div>
     <div class="kpi"><span class="mom" id="k2m"></span><div class="icon purple">⟡</div><div class="label">Ads Spent (incl. SST & WT)</div><div class="val" id="k2">—</div><div class="sub" id="k2s"></div></div>
@@ -266,7 +289,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="kpi"><span class="mom" id="k7m"></span><div class="icon cyan">✉</div><div class="label">Total Messages</div><div class="val" id="scMsg">—</div><div class="sub">Inquiries</div></div>
     <div class="kpi"><span class="mom" id="k8m"></span><div class="icon green">◈</div><div class="label">Total Orders</div><div class="val" id="scOrd">—</div><div class="sub">All Channels</div></div>
   </div>
-  <div class="chart-box"><h3 id="chartTitle">Daily Sales Trend</h3><div class="chart-wrap"><canvas id="dc"></canvas></div></div>
+  <div class="chart-box"><div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px"><h3 id="chartTitle" style="margin-bottom:0">Daily Sales Trend</h3><span id="bestWorst" style="font-size:10.5px;color:#A07850"></span></div><div class="chart-wrap"><canvas id="dc"></canvas></div></div>
   <div class="bottom-grid">
     <div class="bd area-ch"><h4>Channel Ranking</h4><div class="bd-body" id="bCh"></div></div>
     <div class="bd area-ct"><h4>Customer Type</h4><div class="pie-wrap"><canvas id="pieChart" width="200" height="200"></canvas><div id="pieLegend" class="pie-legend"></div></div></div>
@@ -749,6 +772,35 @@ function render() {
     if($('k8m')) $('k8m').innerHTML = momBadge(d.orders, pv.orders);
   }
 
+  // ── Per-brand mini cards (All Projects view) ──
+  if ($('miniCards')) {
+    if (d.proj === 'all' && fromStr && toStr) {
+      const nowB = new Date();
+      const mFromB = dateStrToTs(localDateStr(new Date(nowB.getFullYear(), nowB.getMonth(), 1)));
+      const mToB   = dateStrToTs(localDateStr(nowB));
+      const fT = dateStrToTs(fromStr), tT = dateStrToTs(toStr);
+      const brands = [['omy','OXY MY'],['osg','OXY SG'],['fg','FLEXIGLO'],['mg','MULTIGRAINZ']];
+      $('miniCards').innerHTML = brands.map(function(b){
+        const k = b[0], name = b[1];
+        const s = aggRange(fT, tT, [k]);
+        const mtd = aggRange(mFromB, mToB, [k]).sales;
+        const tp = TGTS[k] ? mtd / TGTS[k] * 100 : 0;
+        const r = s.spendSST > 0 ? s.sales / s.spendSST : 0;
+        const rc = r >= 3 ? '#10b981' : r >= 2 ? '#f59e0b' : '#ef4444';
+        return '<div class="mini-card" onclick="jumpProj(\''+k+'\')" title="Click to view '+name+'">' +
+          '<div class="mc-name">'+name+'</div>' +
+          '<div class="mc-sales">'+fRMK(s.sales)+'</div>' +
+          '<div class="mc-row"><span>ROAS <b style="color:'+(s.spendSST>0?rc:'#A07850')+'">'+(s.spendSST>0?r.toFixed(2)+'x':'—')+'</b></span>' +
+          '<span>MTD <b style="color:'+(tp>=100?'#10b981':'#3D2B1F')+'">'+tp.toFixed(0)+'%</b></span></div>' +
+          '<div class="mc-bar"><div style="width:'+Math.min(tp,100)+'%"></div></div>' +
+        '</div>';
+      }).join('');
+      $('miniCards').style.display = 'grid';
+    } else {
+      $('miniCards').style.display = 'none';
+    }
+  }
+
   const pct = d.tgt > 0 ? (d.sales / d.tgt * 100) : 0;
   const gap = Math.max(0, d.tgt - d.sales);
   const projName = {all:'ALL PROJECTS', fg:'FLEXIGLO', mg:'MULTIGRAINZ', omy:'OXY MY', osg:'OXY SG', oxy:'OXY TOTAL'}[d.proj];
@@ -797,9 +849,29 @@ function render() {
           ? '<span class="pace-tag pace-ahead" title="Expected ' + fRM(expected) + ' by today">🚀 Ahead ' + fRMK(diff) + '</span>'
           : '<span class="pace-tag pace-behind" title="Expected ' + fRM(expected) + ' by today">🐢 Behind ' + fRMK(-diff) + '</span>';
         $('tgtPace').innerHTML = tag;
+
+        // ── Streak: consecutive days (ending yesterday) ≥ daily optimum ──
+        if ($('tgtStreak')) {
+          const opt = d.tgt / daysInMonth;
+          const mDaily = {};
+          esomKeys.forEach(function(k){
+            for (const r of (IDX[k]||[])) {
+              if (r.ts >= curMonthFrom && r.ts <= curMonthTo) mDaily[r.date] = (mDaily[r.date]||0) + r.amount;
+            }
+          });
+          let streak = 0;
+          for (let dd = dayOfMonth - 1; dd >= 1; dd--) {
+            const ds = localDateStr(new Date(curY, curM, dd));
+            if ((mDaily[ds]||0) >= opt) streak++; else break;
+          }
+          $('tgtStreak').innerHTML = streak > 0
+            ? '<span class="pace-tag" style="background:rgba(245,168,0,.14);color:#b45309" title="Consecutive days hitting daily optimum ('+fRMK(opt)+'/day)">🔥 '+streak+'-day streak</span>'
+            : '';
+        }
       } else {
         $('paceMark').style.display = 'none';
         $('tgtPace').innerHTML = '';
+        if ($('tgtStreak')) $('tgtStreak').innerHTML = '';
       }
     }
   }
@@ -879,12 +951,51 @@ function render() {
     vals   = sortedDays.map(k => d.daily[k]||0);
   }
   $('chartTitle').textContent = useMonthly ? 'Monthly Sales Trend' : 'Daily Sales Trend';
-  if (chart) { chart.data.labels = labels; chart.data.datasets[0].data = vals; chart.update('none'); }
+
+  // ── Best / Worst day (daily view only) ──
+  if ($('bestWorst')) {
+    if (!useMonthly && sortedDays.length > 1) {
+      let bK=null,bV=-1,wK=null,wV=Infinity;
+      sortedDays.forEach(function(k){ const v=d.daily[k]||0; if(v>bV){bV=v;bK=k;} if(v<wV){wV=v;wK=k;} });
+      $('bestWorst').innerHTML = '🏆 Best '+bK.slice(5).replace('-','/')+' · <b style="color:#10b981">'+fRMK(bV)+'</b>&ensp;·&ensp;🐌 Lowest '+wK.slice(5).replace('-','/')+' · <b style="color:#ef4444">'+fRMK(wV)+'</b>';
+    } else { $('bestWorst').innerHTML = ''; }
+  }
+  // ── Overlay: last month same period (dashed) + daily optimum line ──
+  let prevVals = [], optVals = [];
+  if (!useMonthly && sortedDays.length) {
+    const pF = dateStrToTs(shiftMonthBack(sortedDays[0]));
+    const pT = dateStrToTs(shiftMonthBack(sortedDays[sortedDays.length-1]));
+    const prevDaily = {};
+    pKeys($('ps').value).forEach(function(k){
+      for (const r of (IDX[k]||[])) {
+        if (r.ts < pF || r.ts > pT) continue;
+        prevDaily[r.date] = (prevDaily[r.date]||0) + r.amount;
+      }
+    });
+    prevVals = sortedDays.map(function(k){ return prevDaily[shiftMonthBack(k)] || 0; });
+    const nowC = new Date();
+    const dimC = new Date(nowC.getFullYear(), nowC.getMonth()+1, 0).getDate();
+    const isThisMonthC = $('df').value === localDateStr(new Date(nowC.getFullYear(), nowC.getMonth(), 1));
+    if (isThisMonthC && d.tgt > 0) {
+      const opt = d.tgt / dimC;
+      optVals = sortedDays.map(function(){ return opt; });
+    }
+  }
+  const dsets = [{ type:'bar', label:'Sales', data:vals, backgroundColor:'rgba(245,168,0,0.5)', borderColor:'rgba(245,168,0,0.9)', borderWidth:1, borderRadius:3, barPercentage:useMonthly?0.5:0.7, order:3 }];
+  if (prevVals.some(function(v){return v>0;})) dsets.push({ type:'line', label:'Last Month', data:prevVals, borderColor:'rgba(160,120,80,0.55)', borderWidth:1.5, borderDash:[5,4], pointRadius:0, tension:.3, order:2 });
+  if (optVals.length) dsets.push({ type:'line', label:'Daily Optimum', data:optVals, borderColor:'rgba(168,85,247,0.65)', borderWidth:1.5, borderDash:[2,3], pointRadius:0, order:1 });
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets = dsets;
+    chart.options.plugins.legend.display = dsets.length > 1;
+    chart.update('none');
+  }
   else {
     chart = new Chart($('dc').getContext('2d'), {
       type:'bar',
-      data:{ labels, datasets:[{ data:vals, backgroundColor:'rgba(245,168,0,0.5)', borderColor:'rgba(245,168,0,0.9)', borderWidth:1, borderRadius:3, barPercentage:useMonthly?0.5:0.7 }] },
-      options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}, tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+fRM(ctx.parsed.y)}}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},maxRotation:45}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},callback:v=>v>=1000?'RM'+(v/1000).toFixed(0)+'K':'RM'+v}} }}
+      data:{ labels, datasets:dsets },
+      options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:dsets.length>1,position:'top',align:'end',labels:{boxWidth:14,boxHeight:8,font:{size:10},color:'#A07850'}}, tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+(ctx.dataset.label||'')+': '+fRM(ctx.parsed.y)}}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},maxRotation:45}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},callback:v=>v>=1000?'RM'+(v/1000).toFixed(0)+'K':'RM'+v}} }}
     });
   }
 }
@@ -920,6 +1031,36 @@ function updateTarget() {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.dp').forEach(b => { b.addEventListener('click', e => setRange(b.dataset.p, b)); });
 $('ps').addEventListener('change', () => { updateTarget(); render(); });
+function jumpProj(k){ $('ps').value = k; $('ps').dispatchEvent(new Event('change')); }
+
+// ─── WHATSAPP DAILY REPORT ───────────────────────────────────────────────────
+function copyWAReport() {
+  const now = new Date();
+  const t0 = dateStrToTs(localDateStr(now));
+  const mFrom = dateStrToTs(localDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const brands = [['omy','OXY MY'],['osg','OXY SG'],['fg','FLEXIGLO'],['mg','MULTIGRAINZ']];
+  let lines = [], totToday = 0, totMTD = 0;
+  brands.forEach(function(b){
+    const k = b[0], name = b[1];
+    const s = aggRange(t0, t0, [k]);
+    const m = aggRange(mFrom, t0, [k]);
+    totToday += s.sales; totMTD += m.sales;
+    const r = s.spendSST > 0 ? (s.sales / s.spendSST).toFixed(2) + 'x' : '—';
+    const mtdPct = TGTS[k] ? (m.sales / TGTS[k] * 100).toFixed(0) + '%' : '—';
+    lines.push('▪️ ' + name + ': ' + fRM(s.sales) + ' | ROAS ' + r + ' | ' + s.msgs + ' msgs | MTD ' + mtdPct);
+  });
+  const dd = String(now.getDate()).padStart(2,'0'), mm = String(now.getMonth()+1).padStart(2,'0');
+  const hh = String(now.getHours()).padStart(2,'0'), mi = String(now.getMinutes()).padStart(2,'0');
+  const allTgt = TGTS.all || 0;
+  const txt = '📊 itsColl Daily Report — ' + dd + '/' + mm + '/' + now.getFullYear() + ' (' + hh + ':' + mi + ')\n' +
+    '━━━━━━━━━━━━━━\n' + lines.join('\n') + '\n━━━━━━━━━━━━━━\n' +
+    '💰 Today Total: ' + fRM(totToday) + '\n' +
+    '📈 MTD: ' + fRM(totMTD) + ' / ' + fRM(allTgt) + ' (' + (allTgt ? (totMTD/allTgt*100).toFixed(1) : '0') + '%)';
+  function done(){ const b=$('waBtn'); const o=b.innerHTML; b.innerHTML='✅ Copied!'; setTimeout(function(){b.innerHTML=o;},1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(function(){ window.prompt('Copy this:', txt); });
+  } else { window.prompt('Copy this:', txt); }
+}
 $('df').addEventListener('change', debouncedRender);
 $('dt').addEventListener('change', debouncedRender);
 $('tgtIn').addEventListener('change', debouncedRender);
@@ -930,6 +1071,8 @@ $('tgtIn').addEventListener('change', debouncedRender);
   $('dt').value = localDateStr(new Date(y,m,d));
   updateTarget();
   fetchData();
+  // Auto-refresh every 10 minutes (uses backend cache — light request)
+  setInterval(function(){ fetchData(false); }, 10*60*1000);
 })();
 
 // ─── TAB SWITCHING ───────────────────────────────────────────────────────────
