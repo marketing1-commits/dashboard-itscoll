@@ -1036,26 +1036,37 @@ function jumpProj(k){ $('ps').value = k; $('ps').dispatchEvent(new Event('change
 // ─── WHATSAPP DAILY REPORT ───────────────────────────────────────────────────
 function copyWAReport() {
   const now = new Date();
-  const t0 = dateStrToTs(localDateStr(now));
-  const mFrom = dateStrToTs(localDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
-  const brands = [['omy','OXY MY'],['osg','OXY SG'],['fg','FLEXIGLO'],['mg','MULTIGRAINZ']];
-  let lines = [], totToday = 0, totMTD = 0;
-  brands.forEach(function(b){
-    const k = b[0], name = b[1];
-    const s = aggRange(t0, t0, [k]);
-    const m = aggRange(mFrom, t0, [k]);
-    totToday += s.sales; totMTD += m.sales;
+  // Follows selected project AND selected date range
+  const proj = $('ps').value;
+  const fromStr = $('df').value || localDateStr(now);
+  const toStr   = $('dt').value || localDateStr(now);
+  const fT = dateStrToTs(fromStr), tT = dateStrToTs(toStr);
+  // Month context based on the "to" date's month
+  const tY = +toStr.slice(0,4), tM = +toStr.slice(5,7)-1;
+  const mFrom = dateStrToTs(localDateStr(new Date(tY, tM, 1)));
+  const isCurMonth = tY === now.getFullYear() && tM === now.getMonth();
+  const mLabel = isCurMonth ? 'MTD' : (['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][tM] + ' Total');
+  const names = {omy:'OXY MY', osg:'OXY SG', fg:'FLEXIGLO', mg:'MULTIGRAINZ'};
+  const projLabel = {all:'ALL PROJECTS', oxy:'OXY TOTAL', fg:'FLEXIGLO', mg:'MULTIGRAINZ', omy:'OXY MY', osg:'OXY SG'}[proj];
+  const keys = pKeys(proj);
+  let lines = [], totRange = 0, totMonth = 0;
+  keys.forEach(function(k){
+    const name = names[k];
+    const s = aggRange(fT, tT, [k]);
+    const m = aggRange(mFrom, tT, [k]);
+    totRange += s.sales; totMonth += m.sales;
     const r = s.spendSST > 0 ? (s.sales / s.spendSST).toFixed(2) + 'x' : '—';
-    const mtdPct = TGTS[k] ? (m.sales / TGTS[k] * 100).toFixed(0) + '%' : '—';
-    lines.push('▪️ ' + name + ': ' + fRM(s.sales) + ' | ROAS ' + r + ' | ' + s.msgs + ' msgs | MTD ' + mtdPct);
+    const mPct = TGTS[k] ? (m.sales / TGTS[k] * 100).toFixed(0) + '%' : '—';
+    lines.push('▪️ ' + name + ': ' + fRM(s.sales) + ' | ROAS ' + r + ' | ' + s.msgs + ' msgs | ' + mLabel + ' ' + mPct);
   });
-  const dd = String(now.getDate()).padStart(2,'0'), mm = String(now.getMonth()+1).padStart(2,'0');
+  const fmtD = function(s){ return s.slice(8,10) + '/' + s.slice(5,7) + '/' + s.slice(0,4); };
+  const dateLabel = fromStr === toStr ? fmtD(fromStr) : fmtD(fromStr) + ' → ' + fmtD(toStr);
   const hh = String(now.getHours()).padStart(2,'0'), mi = String(now.getMinutes()).padStart(2,'0');
-  const allTgt = TGTS.all || 0;
-  const txt = '📊 itsColl Daily Report — ' + dd + '/' + mm + '/' + now.getFullYear() + ' (' + hh + ':' + mi + ')\n' +
-    '━━━━━━━━━━━━━━\n' + lines.join('\n') + '\n━━━━━━━━━━━━━━\n' +
-    '💰 Today Total: ' + fRM(totToday) + '\n' +
-    '📈 MTD: ' + fRM(totMTD) + ' / ' + fRM(allTgt) + ' (' + (allTgt ? (totMTD/allTgt*100).toFixed(1) : '0') + '%)';
+  const pTgt = TGTS[proj] || 0;
+  let txt = '📊 ' + projLabel + ' Report — ' + dateLabel + ' (' + hh + ':' + mi + ')\n' +
+    '━━━━━━━━━━━━━━\n' + lines.join('\n') + '\n━━━━━━━━━━━━━━\n';
+  if (keys.length > 1) txt += '💰 Total: ' + fRM(totRange) + '\n';
+  txt += '📈 ' + mLabel + ': ' + fRM(totMonth) + ' / ' + fRM(pTgt) + ' (' + (pTgt ? (totMonth/pTgt*100).toFixed(1) : '0') + '%)';
   function done(){ const b=$('waBtn'); const o=b.innerHTML; b.innerHTML='✅ Copied!'; setTimeout(function(){b.innerHTML=o;},1600); }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(done).catch(function(){ window.prompt('Copy this:', txt); });
