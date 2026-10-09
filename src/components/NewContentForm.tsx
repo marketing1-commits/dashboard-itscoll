@@ -40,6 +40,26 @@ export default function NewContentForm({
   const [createdName, setCreatedName] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // Next sequence number for this brand, read from the sheet, so the preview
+  // shows the real name. Re-read when the brand changes or after a submit.
+  const [nextSeq, setNextSeq] = useState<number | null>(null);
+  const [seqVersion, setSeqVersion] = useState(0);
+  // The preview name at the moment of submit, to spot a number taken meanwhile
+  const [submittedPreview, setSubmittedPreview] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    setNextSeq(null);
+    authFetch(`/api/content/next-seq?brand=${encodeURIComponent(brand)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.seqNo === "number") setNextSeq(data.seqNo);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch, brand, seqVersion]);
+
   // Angles: try API (Config tab) first, fall back to hardcoded
   const [anglesMap, setAnglesMap] = useState<Record<string, string[]>>(ANGLES);
   useEffect(() => {
@@ -59,11 +79,13 @@ export default function NewContentForm({
     return generateContentName({
       creator: user.name,
       contentType,
-      seqNo: 0, // placeholder
+      seqNo: nextSeq ?? 0, // 0 → shown as ___ until the number loads
       description,
       date: new Date(date),
     });
-  }, [user.name, contentType, description, date]);
+  }, [user.name, contentType, description, date, nextSeq]);
+
+  const previewDisplay = nextSeq === null ? previewName.replace(" 0-", " ___-") : previewName;
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -156,6 +178,7 @@ export default function NewContentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmittedPreview(nextSeq !== null ? previewName : "");
     setSubmitting(true);
     setUploadProgress(0);
 
@@ -228,6 +251,15 @@ export default function NewContentForm({
               Content name for ads:
             </p>
 
+            {submittedPreview && submittedPreview !== createdName && (
+              <div className="rounded-xl border border-yellow-400 bg-yellow-50 p-3 text-xs text-yellow-900">
+                ⚠ 编号变了：刚才有人先提交了同品牌的 content。
+                <br />
+                如果你已经用 <code className="font-mono">{submittedPreview}</code> 开了广告，
+                请把广告名字改成下面这个，不然广告数据配对不到。
+              </div>
+            )}
+
             {/* Name display with copy */}
             <div className="bg-[var(--bg-input)] border border-[var(--border)] rounded-xl p-4">
               <code className="text-sm text-[var(--text-primary)] font-mono break-all leading-relaxed block">
@@ -256,6 +288,8 @@ export default function NewContentForm({
                 onClick={() => {
                   // Reset form for another entry
                   setCreatedName("");
+                  setSubmittedPreview("");
+                  setSeqVersion((v) => v + 1);
                   setDescription("");
                   setSelectedAngles([]);
                   setFile(null);
@@ -314,17 +348,24 @@ export default function NewContentForm({
               <span className="text-xs text-[var(--text-secondary)]">
                 PREVIEW · AUTO-BUILT NAME
               </span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard(previewName.replace(" 0-", " ___-"))}
-                className="text-xs text-[var(--accent)] hover:underline"
-              >
-                {copied ? "✓ Copied" : "Copy"}
-              </button>
+              {/* Only copyable once the real number is in: an ad named with
+                  "___" would never match its content. */}
+              {nextSeq !== null && (
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(previewName)}
+                  className="text-xs text-[var(--accent)] hover:underline"
+                >
+                  {copied ? "✓ Copied" : "Copy"}
+                </button>
+              )}
             </div>
             <code className="text-sm text-[var(--text-primary)] font-mono break-all">
-              {previewName.replace(" 0-", " ___-")}
+              {previewDisplay}
             </code>
+            {nextSeq === null && (
+              <p className="mt-1.5 text-xs text-[var(--text-secondary)]">正在读取编号…</p>
+            )}
           </div>
         )}
 
