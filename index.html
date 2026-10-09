@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ItsColl Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#FFF8EC;color:#3D2B1F;min-height:100vh;font-size:13px}
+.top{background:#FFFFFF;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid #E8D5B0}
+.top h1{font-size:14px;font-weight:700;color:#3D2B1F;letter-spacing:1px}
+.top h1 span{color:#F5A800;margin-right:6px}
+.top .sub{color:#A07850;font-size:11px;margin-left:6px}
+.top-right{display:flex;align-items:center;gap:12px}
+.sync-btn{background:rgba(0,240,255,.1);border:1px solid rgba(0,240,255,.3);color:#F5A800;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px}
+.sync-btn:hover{background:rgba(245,168,0,0.2)}
+.sync-btn.loading{opacity:.6;cursor:not-allowed}
+.sync-btn .spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.last-updated{font-size:10px;color:#A07850}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.status-dot.ok{background:#10b981}
+.status-dot.err{background:#ef4444}
+.status-dot.loading{background:#F5A800;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ctrl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ctrl label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px}
+.ctrl select,.ctrl input{background:#FFF3E0;border:1px solid #E8D5B0;color:#3D2B1F;padding:5px 8px;border-radius:5px;font-size:11px}
+.ctrl input[type=date]{width:120px}
+.ctrl input[type=number]{width:80px}
+.presets{display:flex;gap:4px;flex-wrap:wrap}
+.presets button{background:#FFF3E0;border:1px solid #E8D5B0;color:#A07850;padding:4px 10px;border-radius:5px;font-size:10px;cursor:pointer;transition:.2s}
+.presets button:hover{border-color:#F5A800;color:#3D2B1F}
+.presets button.on{background:rgba(0,240,255,.15);border-color:#F5A800;color:#F5A800}
+.main{padding:16px 20px}
+.tgt{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:14px 18px;margin-bottom:14px}
+.tgt .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tgt .hd h3{font-size:12px;color:#A07850;text-transform:uppercase;letter-spacing:1px}
+.tgt .hd .pct{font-size:16px;font-weight:700;color:#10b981}
+.tgt .bar{height:8px;background:#F5E6C8;border-radius:4px;margin-bottom:8px;position:relative}
+.tgt .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#F5A800,#10b981);transition:width .6s cubic-bezier(.4,0,.2,1)}
+.tgt .info{display:flex;justify-content:space-between;font-size:11px;color:#A07850;flex-wrap:wrap;gap:4px}
+.tgt .info .achieved{color:#10b981}
+.tgt .info .gap{color:#f59e0b}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px;position:relative;transition:transform .18s ease,box-shadow .18s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(160,120,80,.14)}
+.mom{position:absolute;top:12px;right:12px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.2px}
+.mom-up{background:rgba(16,185,129,.12);color:#0d9c6d}
+.mom-down{background:rgba(239,68,68,.12);color:#dc2626}
+.mom-flat{background:rgba(160,120,80,.1);color:#A07850}
+.pace-mark{position:absolute;top:-3px;bottom:-3px;width:2.5px;background:#a855f7;border-radius:2px;box-shadow:0 0 4px rgba(168,85,247,.5);transition:left .5s}
+.pace-tag{font-weight:700;padding:1px 8px;border-radius:20px;font-size:11px}
+.pace-ahead{background:rgba(16,185,129,.12);color:#0d9c6d}
+.pace-behind{background:rgba(239,68,68,.1);color:#dc2626}
+.kpi .icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px}
+.kpi .icon.cyan{background:rgba(0,240,255,.12);color:#F5A800}
+.kpi .icon.green{background:rgba(16,185,129,.12);color:#10b981}
+.kpi .icon.purple{background:rgba(168,85,247,.12);color:#a855f7}
+.kpi .icon.orange{background:rgba(249,115,22,.12);color:#f97316}
+.kpi .icon.pink{background:rgba(236,72,153,.12);color:#ec4899}
+.kpi .icon.blue{background:rgba(59,130,246,.12);color:#3b82f6}
+.kpi .label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kpi .val{font-size:22px;font-weight:700;color:#3D2B1F}
+.kpi .sub{font-size:11px;color:#A07850;margin-top:3px}
+.chart-box{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px;margin-bottom:14px}
+.chart-box h3{font-size:12px;color:#A07850;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.chart-wrap{width:100%;height:180px;position:relative}
+.state-wrap{flex:1;min-height:240px;position:relative}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;align-items:stretch}
+.bd{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:14px;min-width:0;display:flex;flex-direction:column}
+.bd h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;flex-shrink:0}
+.bd-body{flex:1;min-height:0}
+.lb-podium{display:flex;justify-content:space-around;align-items:flex-end;gap:8px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #E8D5B0}
+.lb-pod-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.lb-medal{font-size:28px;line-height:1}
+.lb-pod-name{font-size:11px;color:#8B6A4A;text-align:center}
+.lb-pod-amt{font-size:12px;font-weight:700;color:#3D2B1F;text-align:center}
+.lb-rest-list{display:flex;flex-direction:column;gap:6px}
+.lb-rest-row{display:flex;flex-direction:column;gap:3px}
+.lb-rest-top{display:flex;justify-content:space-between;align-items:center}
+.lb-rest-left{display:flex;align-items:center;gap:6px}
+.lb-rest-rank{color:#A07850;font-size:10px;width:14px}
+.lb-rest-name{color:#8B6A4A;font-size:11px}
+.lb-rest-amt{color:#F5A800;font-size:11px;font-weight:600}
+.lb-bar-bg{height:4px;background:#F5E6C8;border-radius:2px;overflow:hidden}
+.lb-bar-fill{height:100%;background:linear-gradient(90deg,#F5A800,#E09600);border-radius:2px}
+.pie-wrap{display:flex;align-items:center;gap:20px;flex:1;min-height:0}
+.pie-wrap canvas{flex-shrink:0}
+.pie-legend{display:flex;flex-direction:column;justify-content:center;gap:14px;flex:1;min-width:0}
+.pie-leg-row{display:flex;align-items:flex-start;gap:10px}
+.pie-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.pie-leg-name{font-size:10px;color:#8B6A4A;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.pie-leg-val{font-size:14px;color:#3D2B1F;font-weight:700}
+.pie-leg-pct{font-size:11px;color:#A07850;font-weight:400;margin-left:4px}
+@media(max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .bottom-grid{grid-template-columns:1fr}
+  .pie-wrap{flex-direction:row;align-items:center}
+}
+.tabs{display:flex;gap:0;background:#FFF3E0;border-bottom:2px solid #E8D5B0;padding:0 20px}
+.tab-btn{padding:10px 20px;font-size:12px;font-weight:600;color:#A07850;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;text-transform:uppercase;letter-spacing:.5px}
+.tab-btn:hover{color:#3D2B1F}
+.tab-btn.active{color:#F5A800;border-bottom-color:#F5A800;background:#FFFFFF}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.crm-main{padding:16px 20px}
+.crm-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.crm-kpi{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.crm-kpi .icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px}
+.crm-kpi .label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.crm-kpi .val{font-size:22px;font-weight:700;color:#3D2B1F}
+.crm-kpi .sub{font-size:11px;color:#A07850;margin-top:3px}
+.crm-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.crm-card{background:#FFFFFF;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.crm-card h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.crm-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.crm-bar-label{width:80px;font-size:11px;color:#5C4033;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crm-bar-track{flex:1;background:#F5E6C8;border-radius:4px;height:16px;overflow:hidden}
+.crm-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;min-width:20px}
+.crm-bar-fill span{font-size:10px;color:white;font-weight:700}
+.crm-table{width:100%;border-collapse:collapse;font-size:12px}
+.crm-table th{padding:8px;text-align:left;color:#A07850;font-weight:600;border-bottom:2px solid #F0E6D3}
+.crm-table td{padding:8px;border-bottom:1px solid #F5EDE3}
+@media(max-width:900px){.crm-kpis{grid-template-columns:repeat(2,1fr)}.crm-charts{grid-template-columns:1fr}}
+.mini-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.mini-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:12px 14px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.mini-card:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(160,120,80,.15)}
+.mini-card .mc-name{font-size:10px;color:#A07850;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.mini-card .mc-sales{font-size:19px;font-weight:700;color:#3D2B1F}
+.mini-card .mc-row{display:flex;justify-content:space-between;font-size:10.5px;color:#A07850;margin-top:4px}
+.mini-card .mc-bar{height:4px;background:#F5E6C8;border-radius:2px;margin-top:6px;overflow:hidden}
+.mini-card .mc-bar div{height:100%;background:linear-gradient(90deg,#F5A800,#10b981);border-radius:2px}
+@media(max-width:900px){.mini-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){
+  #tgtRow{grid-template-columns:1fr!important}
+  .ctrl{gap:8px}
+  .ctrl select,.ctrl input{max-width:130px}
+  .presets{width:100%;display:flex;flex-wrap:wrap;gap:4px}
+}
+@media(max-width:500px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi{padding:12px}
+  .kpi .val{font-size:18px}
+  .mom{top:9px;right:9px;font-size:9.5px}
+  .top h1 .sub{display:none}
+  .main{padding:12px}
+  .mini-card .mc-sales{font-size:16px}
+}
+.ops-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.ops-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.ops-card .oc-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.ops-card .oc-val{font-size:26px;font-weight:700;color:#3D2B1F;line-height:1}
+.ops-card .oc-sub{font-size:11px;color:#A07850;margin-top:4px}
+.ops-card .oc-accent{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:10px 0 0 10px}
+.ops-card.blue .oc-accent{background:#3b82f6}
+.ops-card.amber .oc-accent{background:#f59e0b}
+.ops-card.red .oc-accent{background:#ef4444}
+.ops-card.purple .oc-accent{background:#a855f7}
+.prog-bar{flex:1;height:6px;background:#F5E6C8;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#F5A800,#10b981);transition:width .4s}
+.health-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.health-kpi{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px;text-align:center}
+.health-kpi .hk-val{font-size:22px;font-weight:700;color:#3D2B1F}
+.health-kpi .hk-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.health-kpi .hk-sub{font-size:11px;color:#A07850;margin-top:2px}
+.funnel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.funnel-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:16px}
+.funnel-card h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.funnel-lbl{width:90px;font-size:11px;color:#5C4033;text-align:right;flex-shrink:0}
+.funnel-track{flex:1;background:#F5E6C8;border-radius:4px;height:18px;overflow:hidden}
+.funnel-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;min-width:24px}
+.funnel-fill span{font-size:10px;color:#fff;font-weight:700;white-space:nowrap}
+.funnel-arrow{font-size:10px;color:#A07850;text-align:center;margin:0 0 4px 98px}
+.tier-growth-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.tg-card{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:14px}
+.tg-card h4{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.near-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F5E6C8;font-size:12px}
+.near-row:last-child{border-bottom:none}
+.near-name{color:#3D2B1F;font-weight:600;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.near-badge{font-size:10px;color:#fff;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap}
+.sec-title{font-size:11px;color:#A07850;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:6px 0 8px}
+@media(max-width:900px){
+  .ops-grid{grid-template-columns:repeat(2,1fr)}
+  .funnel-grid{grid-template-columns:1fr}
+  .tier-growth-grid{grid-template-columns:1fr}
+  .health-row{grid-template-columns:repeat(2,1fr)}
+}
+.ret-funnel{display:flex;align-items:center;gap:0;margin:8px 0}
+.ret-step{flex:1;text-align:center;position:relative}
+.ret-step .rs-num{font-size:20px;font-weight:700;color:#3D2B1F}
+.ret-step .rs-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.ret-step .rs-pct{font-size:11px;color:#ef4444;font-weight:600;margin-top:2px}
+.ret-step .rs-pct.good{color:#10b981}
+.ret-arrow{font-size:18px;color:#E8D5B0;flex-shrink:0;padding:0 4px;margin-bottom:14px}
+.trend-bars{display:flex;align-items:flex-end;gap:4px;height:60px;padding:0 4px}
+.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.trend-bar{width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:height .3s;background:linear-gradient(180deg,#10b981,#34d399)}
+.trend-bar.low{background:linear-gradient(180deg,#ef4444,#f87171)}
+.trend-month{font-size:9px;color:#A07850;text-align:center;white-space:nowrap}
+.trend-val{font-size:9px;color:#3D2B1F;font-weight:700;text-align:center}
+.bronze-banner{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #CD7F32;border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+.bronze-banner .bb-pct{font-size:36px;font-weight:700;color:#CD7F32;line-height:1}
+.bronze-banner .bb-text h4{font-size:13px;font-weight:700;color:#3D2B1F;margin-bottom:4px}
+.bronze-banner .bb-text p{font-size:11px;color:#A07850;margin:0}
+.bronze-banner .bb-arrow{font-size:28px;color:#CD7F32;margin:0 8px}
+.today-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.today-pill{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#fff}
+.cs-activity{background:#fff;border:1px solid #E8D5B0;border-radius:10px;padding:16px;margin-bottom:14px}
+.cs-period-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.cs-tab{padding:5px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:11px;cursor:pointer;color:#A07850;background:#FFF8EC;transition:.15s;font-weight:600}
+.cs-tab.active{background:#F5A800;border-color:#F5A800;color:#fff}
+.cs-custom-range{display:none;gap:6px;align-items:center;margin-left:4px}
+.cs-custom-range.show{display:flex}
+.cs-custom-range input{padding:4px 8px;border:1px solid #E8D5B0;border-radius:5px;font-size:11px;color:#3D2B1F;background:#FFF8EC}
+.cs-custom-range button{padding:4px 10px;background:#F5A800;border:none;border-radius:5px;font-size:11px;color:#fff;cursor:pointer;font-weight:600}
+.cs-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.cs-metric{background:#FFF8EC;border-radius:8px;padding:12px 14px;text-align:center}
+.cs-metric .cm-val{font-size:28px;font-weight:700;color:#3D2B1F}
+.cs-metric .cm-label{font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.cs-metric .cm-icon{font-size:16px;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="data:image/png;base64,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" alt="itsColl Wellness" style="height:34px;width:auto;display:block">
+    <span class="sub" style="color:#A07850;font-size:11px;">· Analytics Dashboard</span>
+  </div>
+  <div class="top-right">
+    <span class="last-updated" id="lastUpdated"><span class="status-dot loading" id="statusDot"></span>Loading...</span>
+    <button class="sync-btn" id="waBtn" onclick="copyWAReport()" title="Copy today's numbers as WhatsApp-ready text">📋 日报</button>
+    <button class="sync-btn" id="syncBtn" onclick="fetchData(true)">↻ Sync</button>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('sales',event)">📊 Sales Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('crm',event)">👥 CRM Dashboard</button>
+</div>
+<div id="salesTab" class="tab-content active">
+<div class="main">
+  <div class="err-banner" id="errBanner" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#dc2626"></div>
+  <div class="ctrl" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+    <div><label>Project</label><br><select id="ps"><option value="all">All Projects</option><option value="fg">FlexiGlo</option><option value="mg">Multigrainz</option><option value="omy">Oxy MY</option><option value="osg">Oxy SG</option><option value="oxy">Oxy Total</option></select></div>
+    <div><label>From</label><br><input type="date" id="df"></div>
+    <div><label>To</label><br><input type="date" id="dt"></div>
+    <div><label>Target (RM)</label><br><input type="number" id="tgtIn" value="410000"></div>
+    <div class="presets">
+      <button class="dp" data-p="today">Today</button>
+      <button class="dp" data-p="yesterday">Yesterday</button>
+      <button class="dp" data-p="7d">Last 7d</button>
+      <button class="dp" data-p="thisWeek">This Week</button>
+      <button class="dp on" data-p="thisMonth">This Month</button>
+      <button class="dp" data-p="lastMonth">Last Month</button>
+      <button class="dp" data-p="ytd">YTD</button>
+    </div>
+  </div>
+  <div id="tgtRow" style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px;align-items:stretch">
+    <div class="tgt" style="margin-bottom:0">
+      <div class="hd"><h3 id="tgtTitle">TARGET</h3><div class="pct" id="tgtPct">0%</div></div>
+      <div class="bar"><div class="fill" id="tgtFill" style="width:0%"></div><div class="pace-mark" id="paceMark" style="left:0%;display:none"></div></div>
+      <div class="info">
+        <span>Achieved: <b id="tgtAch">RM0.00</b> / <span id="tgtOf">RM0</span></span>
+        <span class="gap">Gap: <b id="tgtGap">RM0.00</b></span>
+        <span style="color:#a855f7">Daily Optimum: <b id="tgtDaily">—</b></span>
+        <span id="tgtPace"></span>
+        <span id="tgtStreak"></span>
+        <span class="achieved" id="tgtStatus"></span>
+      </div>
+    </div>
+    <div class="tgt" style="margin-bottom:0;min-width:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:4px">
+      <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:1px;font-weight:600">ESOM</div>
+      <div style="font-size:11px;color:#A07850;margin-bottom:2px" id="esomMonth">—</div>
+      <div style="font-size:22px;font-weight:700;color:#F5A800" id="esomVal">—</div>
+      <div style="font-size:10px;color:#A07850" id="esomSub">Est. End of Month</div>
+    </div>
+  </div>
+  <div class="mini-cards" id="miniCards" style="display:none"></div>
+  <div class="kpis">
+    <div class="kpi"><span class="mom" id="k1m"></span><div class="icon cyan">$</div><div class="label">Sales</div><div class="val" id="k1">—</div><div class="sub" id="k1s"></div></div>
+    <div class="kpi"><span class="mom" id="k2m"></span><div class="icon purple">⟡</div><div class="label">Ads Spent (incl. SST & WT)</div><div class="val" id="k2">—</div><div class="sub" id="k2s"></div></div>
+    <div class="kpi"><span class="mom" id="k3m"></span><div class="icon green">↗</div><div class="label">ROAS</div><div class="val" id="k3">—</div><div class="sub" id="k3s">Sales / (Spend × 1.16)</div></div>
+    <div class="kpi"><span class="mom" id="k4m"></span><div class="icon orange">◎</div><div class="label">AOV</div><div class="val" id="k4">—</div><div class="sub" id="k4s">Per Order</div></div>
+    <div class="kpi"><span class="mom" id="k5m"></span><div class="icon pink">●</div><div class="label">Cost / Msg</div><div class="val" id="k5">—</div><div class="sub" id="k5s">Per Message</div></div>
+    <div class="kpi"><span class="mom" id="k6m"></span><div class="icon blue">%</div><div class="label">CVR</div><div class="val" id="k6">—</div><div class="sub" id="k6s">Orders / Msgs</div></div>
+    <div class="kpi"><span class="mom" id="k7m"></span><div class="icon cyan">✉</div><div class="label">Total Messages</div><div class="val" id="scMsg">—</div><div class="sub">Inquiries</div></div>
+    <div class="kpi"><span class="mom" id="k8m"></span><div class="icon green">◈</div><div class="label">Total Orders</div><div class="val" id="scOrd">—</div><div class="sub">All Channels</div></div>
+  </div>
+  <div class="chart-box"><div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:10px"><h3 id="chartTitle" style="margin-bottom:0">Daily Sales Trend</h3><span id="bestWorst" style="font-size:10.5px;color:#A07850"></span></div><div class="chart-wrap"><canvas id="dc"></canvas></div></div>
+  <div class="bottom-grid">
+    <div class="bd area-ch"><h4>Channel Ranking</h4><div class="bd-body" id="bCh"></div></div>
+    <div class="bd area-ct"><h4>Customer Type</h4><div class="pie-wrap"><canvas id="pieChart" width="200" height="200"></canvas><div id="pieLegend" class="pie-legend"></div></div></div>
+    <div class="bd area-st"><h4>Sales by State</h4><div class="state-wrap" id="stateWrap"><canvas id="stateChart"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<div id="crmTab" class="tab-content">
+<div class="crm-main">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div>
+      <h2 style="font-size:16px;color:#3D2B1F;margin:0;font-weight:700">👥 CRM — Customer Retention Dashboard</h2>
+      <p style="font-size:10px;color:#A07850;margin:4px 0 0" id="crmUpdated">Loading...</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="crmCountry" onchange="loadCRM();loadCSActivity();" style="padding:6px 12px;border:1px solid #E8D5B0;border-radius:6px;font-size:12px;background:white;color:#3D2B1F;font-weight:600">
+        <option value="">All (MY+SG)</option>
+        <option value="MY">🇲🇾 Oxy MY</option>
+        <option value="SG">🇸🇬 Oxy SG</option>
+        <option value="FG">💪 FlexiGlo</option>
+      </select>
+      <button class="sync-btn" onclick="loadCRM();loadCSActivity();">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <div class="sec-title">📌 Key Metrics</div>
+  <div class="ops-grid" style="margin-bottom:14px">
+    <div class="ops-card blue">
+      <div class="oc-accent"></div>
+      <div class="oc-label">Refill Conversion Rate</div>
+      <div class="oc-val" id="snapRepeatRate">—</div>
+      <div class="oc-sub" id="snapRepeatSub">this month repeat ÷ prev 2M new</div>
+    </div>
+    <div class="ops-card red">
+      <div class="oc-accent"></div>
+      <div class="oc-label">AT-RISK Customers</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="oc-val" id="snapAtRisk">—</div>
+        <div style="font-size:13px;font-weight:700;color:#ef4444" id="snapAtRiskAvg">—</div>
+      </div>
+      <div class="oc-sub" id="snapAtRiskSub">avg per customer · 30–90 days past finish</div>
+    </div>
+    <div class="ops-card amber">
+      <div class="oc-accent"></div>
+      <div class="oc-label">Avg Customer Value</div>
+      <div class="oc-val" id="snapACV">—</div>
+      <div class="oc-sub">lifetime spend per customer</div>
+    </div>
+  </div>
+
+  <div class="cs-activity">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:#3D2B1F">👩‍💼 CS Activity Tracker</div>
+      <div style="font-size:10px;color:#A07850" id="csLastUpdated">—</div>
+    </div>
+    <div class="cs-period-tabs">
+      <button class="cs-tab active" onclick="setCSPeriod('today',this)">Today</button>
+      <button class="cs-tab" onclick="setCSPeriod('week',this)">This Week</button>
+      <button class="cs-tab" onclick="setCSPeriod('month',this)">This Month</button>
+      <button class="cs-tab" onclick="setCSPeriod('custom',this)">Custom</button>
+      <div class="cs-custom-range" id="csCustomRange">
+        <input type="date" id="csFrom" />
+        <span style="font-size:11px;color:#A07850">to</span>
+        <input type="date" id="csTo" />
+        <button onclick="loadCSActivity()">Go</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:center;margin-top:10px">
+      <div style="position:relative;text-align:center">
+        <canvas id="csDonut" width="140" height="140"></canvas>
+        <div id="csDonutLabel" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;color:#A07850;text-align:center;line-height:1.3;pointer-events:none"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:12px;height:12px;border-radius:3px;background:#F5A800;flex-shrink:0"></div>
+          <div>
+            <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Contacted (WhatsApp)</div>
+            <div style="font-size:24px;font-weight:700;color:#3D2B1F" id="csContacted">—</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:12px;height:12px;border-radius:3px;background:#8b5cf6;flex-shrink:0"></div>
+          <div>
+            <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Called (Phone)</div>
+            <div style="font-size:24px;font-weight:700;color:#3D2B1F" id="csCalled">—</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #F5E6C8;padding-top:10px">
+          <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px">Total Touchpoints</div>
+          <div style="font-size:20px;font-weight:700;color:#F5A800" id="csTotal">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bronze-banner" id="bronzeBanner">
+    <div class="bb-pct" id="bronzePct">—%</div>
+    <div class="bb-arrow">🥉→🥈</div>
+    <div class="bb-text">
+      <h4>Bronze → Silver 升级机会最大</h4>
+      <p id="bronzeDesc">加载中...</p>
+    </div>
+  </div>
+
+  <div class="sec-title">🎯 Today's Priority Actions</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="crm-card" style="margin:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F5E6C8">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#10b981">🔄 Refill Window</div>
+          <div style="font-size:10px;color:#5C4033;margin-top:2px">approaching finish date · time to push refill</div>
+        </div>
+        <div style="font-size:28px;font-weight:700;color:#10b981" id="refillCount">—</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#f59e0b">⚠️ AT-RISK to Contact</div>
+          <div style="font-size:10px;color:#5C4033;margin-top:2px">30–90 days past finish date · rescue before churn</div>
+        </div>
+        <div style="font-size:28px;font-weight:700;color:#f59e0b" id="atRiskCount2">—</div>
+      </div>
+    </div>
+    <div class="crm-card" style="margin:0">
+      <h4 style="margin-bottom:12px">📈 Monthly Repeat Rate Trend</h4>
+      <div id="trendBars" style="color:#A07850;font-size:11px">Loading...</div>
+    </div>
+  </div>
+
+  <div class="sec-title">🔁 Retention Funnel (Purchase Cohort)</div>
+  <div class="crm-card" style="margin-bottom:14px">
+    <div class="ret-funnel" id="retFunnel">
+      <div class="ret-step"><div class="rs-num" id="rf1">—</div><div class="rs-label">1st Purchase</div></div>
+      <div class="ret-arrow">→</div>
+      <div class="ret-step"><div class="rs-num" id="rf2">—</div><div class="rs-label">2nd Purchase</div><div class="rs-pct" id="rf2pct">—</div></div>
+      <div class="ret-arrow">→</div>
+      <div class="ret-step"><div class="rs-num" id="rf3">—</div><div class="rs-label">3rd Purchase</div><div class="rs-pct" id="rf3pct">—</div></div>
+      <div class="ret-arrow">→</div>
+      <div class="ret-step"><div class="rs-num" id="rf4plus">—</div><div class="rs-label">4th+ Purchase</div><div class="rs-pct good" id="rf4pct">—</div></div>
+    </div>
+    <div style="font-size:11px;color:#A07850;margin-top:8px;padding-top:8px;border-top:1px solid #F5E6C8" id="retFunnelNote">Based on total order count per customer</div>
+  </div>
+
+  <div class="sec-title">📊 Retention Health</div>
+  <div class="health-row">
+    <div class="health-kpi"><div class="hk-val" id="hRepeat">—</div><div class="hk-label">Repeat Rate</div><div class="hk-sub" id="hRepeatSub">—</div></div>
+    <div class="health-kpi"><div class="hk-val" id="hActive">—</div><div class="hk-label">Active Customers</div><div class="hk-sub" id="hActiveSub">of total</div></div>
+    <div class="health-kpi" style="border-left:3px solid #f59e0b"><div class="hk-val" style="color:#f59e0b" id="hRisk">—</div><div class="hk-label">AT-RISK</div><div class="hk-sub">30–90 days past finish</div></div>
+    <div class="health-kpi" style="border-left:3px solid #ef4444"><div class="hk-val" style="color:#ef4444" id="hChurned">—</div><div class="hk-label">Churned</div><div class="hk-sub">90+ days past finish</div></div>
+  </div>
+
+  <div class="funnel-grid">
+    <div class="funnel-card">
+      <h4>🔁 New Customer Journey Funnel</h4>
+      <div id="crmFunnel">Loading...</div>
+    </div>
+    <div class="funnel-card">
+      <h4>🏆 Tier Distribution</h4>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <canvas id="crmTierChart" width="120" height="120" style="flex-shrink:0"></canvas>
+        <div id="crmTierLegend" style="flex:1"></div>
+      </div>
+      <div style="border-top:1px solid #F5E6C8;padding-top:10px">
+        <div style="font-size:10px;color:#A07850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Upgrade Pipeline</div>
+        <div id="tierUpgradeBars"></div>
+      </div>
+      <div id="tierInsight" style="margin-top:8px;padding:8px 10px;background:#FFF8EC;border-radius:6px;font-size:11px;color:#5C4033;border-left:3px solid #F5A800"></div>
+    </div>
+  </div>
+
+  <div class="sec-title">📈 Tier Growth Opportunities</div>
+  <div class="tier-growth-grid">
+    <div class="tg-card">
+      <h4>💰 Revenue Overview</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+        <div><div style="font-size:10px;color:#A07850">Total Lifetime Revenue</div><div style="font-size:18px;font-weight:700;color:#F5A800" id="tgRevenue">—</div></div>
+        <div><div style="font-size:10px;color:#A07850">Avg Customer Value</div><div style="font-size:16px;font-weight:700;color:#3D2B1F" id="tgACV">—</div></div>
+        <div><div style="font-size:10px;color:#A07850">Total Customers</div><div style="font-size:16px;font-weight:700;color:#3D2B1F" id="tgTotal">—</div></div>
+        <div><div style="font-size:10px;color:#A07850">CHURNED — Potential Recovery</div><div style="font-size:14px;font-weight:700;color:#ef4444" id="tgChurnedRev">—</div></div>
+      </div>
+    </div>
+    <div class="tg-card">
+      <h4>⬆️ Close to Silver Upgrade (Top Bronze)</h4>
+      <div id="tgNearSilver">Loading...</div>
+    </div>
+    <div class="tg-card">
+      <h4>🗺️ All Journey Stages</h4>
+      <div id="tgJourneyBars"></div>
+    </div>
+  </div>
+
+  <div class="crm-charts" style="margin-bottom:14px">
+    <div class="crm-card"><h4>📢 Channel Distribution</h4><div id="crmChannelBars"></div></div>
+    <div class="crm-card"><h4>📍 State Distribution</h4><div id="crmStateBars"></div></div>
+  </div>
+
+  <div class="crm-card" style="margin-bottom:14px">
+    <h4>🌟 Top 10 Customers by Lifetime Value</h4>
+    <table class="crm-table">
+      <thead><tr><th>#</th><th>Customer</th><th style="text-align:right">Orders</th><th style="text-align:right">Total Spent</th><th>Tier</th></tr></thead>
+      <tbody id="crmTopTable"></tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzt1uapDXUhWgzuVCx76VV5CoLj0gJz-ixEh55ggJw8BQqE4wKHYtFLKSW-4coeMQxo/exec';
+const SST = 1.16;
+const TGTS = {fg:150000, mg:150000, omy:300000, osg:30000, oxy:350000, all:650000};
+
+// ─── CRM API ENDPOINTS ───────────────────────────────────────────────────────
+const CRM_API    = 'https://script.google.com/macros/s/AKfycbwT4aFsvIjZQm0y8VSek0ZfG3g53ZsHK_AgfFQr0amWjb5w2AZkgWgiGpl5QY2mRrtT/exec';
+const FG_CRM_API = 'https://script.google.com/macros/s/AKfycbzPeXE_Nb9CwmNWC0iGde8JJ82gXtjTyV37XRjHyHtpPchMs6xiq4pp7j3PzJQlCHeekg/exec';
+
+function getActiveCRMApi() {
+  return document.getElementById('crmCountry').value === 'FG' ? FG_CRM_API : CRM_API;
+}
+
+// ─── LOCAL DATE HELPER ────────────────────────────────────────────────────────
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function todayLocal() { return new Date(); }
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let RAW = { fg:[], mg:[], omy:[], osg:[], ads:{ fg:{}, mg:{}, omy:{}, osg:{} } };
+let IDX = { fg:[], mg:[], omy:[], osg:[] };
+let IDX_ADS = { fg:[], mg:[], omy:[], osg:[] };
+
+function buildIndex() {
+  ['fg','mg','omy','osg'].forEach(k => {
+    IDX[k] = (RAW[k] || []).map(r => ({
+      ts:       dateStrToTs(r.date),
+      date:     r.date,
+      amount:   parseFloat(r.amount) || 0,
+      channel:  r.channel  || 'Unknown',
+      state:    r.state    || 'Unknown',
+      custType: r.custType || 'Unknown',
+    })).filter(r => r.ts > 0);
+
+    const adsData = RAW.ads[k];
+    IDX_ADS[k] = (adsData && Array.isArray(adsData.daily) ? adsData.daily : []).map(e => ({
+      ts:       dateStrToTs(e.date),
+      spend:    parseFloat(e.spend)    || 0,
+      spendSST: parseFloat(e.spendSST) || 0,
+      msgs:     parseInt(e.msgs)       || 0,
+    })).filter(r => r.ts > 0);
+  });
+}
+
+function dateStrToTs(s) {
+  if (!s || s.length < 10) return 0;
+  const y = +s.slice(0,4), m = +s.slice(5,7)-1, d = +s.slice(8,10);
+  return new Date(y, m, d).getTime();
+}
+
+// ─── LOCAL STORAGE CACHE ─────────────────────────────────────────────────────
+const LS_KEY = 'itscoll_data';
+const LS_TTL = 5 * 60 * 1000;
+
+function saveLocal(json) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ts:Date.now(), data:json})); } catch(e) {}
+}
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const {ts, data} = JSON.parse(raw);
+    return (Date.now() - ts < LS_TTL) ? data : null;
+  } catch(e) { return null; }
+}
+function applyData(json) {
+  RAW.fg  = json.fg  || [];
+  RAW.mg  = json.mg  || [];
+  RAW.omy = json.omy || [];
+  RAW.osg = json.osg || [];
+  if (json.ads) {
+    RAW.ads.fg  = json.ads.fg  || {};
+    RAW.ads.mg  = json.ads.mg  || {};
+    RAW.ads.omy = json.ads.omy || {};
+    RAW.ads.osg = json.ads.osg || {};
+  }
+  buildIndex();
+}
+
+// ─── FETCH ───────────────────────────────────────────────────────────────────
+async function fetchData(force = false) {
+  const btn = $('syncBtn');
+  const lu  = $('lastUpdated');
+
+  if (!force) {
+    const local = loadLocal();
+    if (local) {
+      applyData(local);
+      render();
+      const stored = JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+      const ago = stored.ts ? Math.round((Date.now()-stored.ts)/1000) : 0;
+      lu.innerHTML = '<span class="status-dot ok"></span>Cached ('+(ago<60?ago+'s':Math.round(ago/60)+'m')+' ago) — syncing…';
+    }
+  }
+
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="spin">↻</span> Syncing…';
+  if (!lu.innerHTML.includes('Cached')) {
+    lu.innerHTML = '<span class="status-dot loading"></span>Fetching…';
+  }
+
+  const url = WEB_APP_URL + (force ? '?refresh=1' : '');
+
+  try {
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    applyData(json);
+    saveLocal(json);
+    const now = new Date().toLocaleTimeString('en-MY', {hour:'2-digit',minute:'2-digit'});
+    lu.innerHTML = '<span class="status-dot ok"></span>Updated ' + now;
+    $('errBanner').style.display = 'none';
+    render();
+  } catch(e) {
+    lu.innerHTML = '<span class="status-dot err"></span>Sync failed';
+    showErr('Fetch failed: ' + e.message + (RAW.fg.length ? ' — showing cached data.' : ''));
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML = '↻ Sync';
+  }
+}
+
+function showErr(msg) {
+  const b = $('errBanner');
+  b.textContent = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function fRM(v) { return 'RM' + v.toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}) }
+function pKeys(p) { return p==='all'?['fg','mg','omy','osg']:p==='oxy'?['omy','osg']:[p] }
+
+// ─── AGGREGATION ─────────────────────────────────────────────────────────────
+function agg() {
+  const proj    = $('ps').value;
+  const fromStr = $('df').value;
+  const toStr   = $('dt').value;
+  const tgt     = parseFloat($('tgtIn').value) || 0;
+  const keys    = pKeys(proj);
+
+  if (!fromStr || !toStr) return {sales:0,orders:0,spend:0,spendSST:0,msgs:0,ch:{},st:{},ct:{},daily:{},tgt,proj};
+
+  const fromTs = dateStrToTs(fromStr);
+  const toTs   = dateStrToTs(toStr);
+
+  let sales=0, orders=0, spend=0, spendSST=0, msgs=0;
+  let ch={}, st={}, ct={}, daily={};
+  ctSales = {};
+
+  keys.forEach(k => {
+    for (const r of (IDX[k] || [])) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      sales += r.amount;
+      orders++;
+      daily[r.date]  = (daily[r.date]  || 0) + r.amount;
+      ch[r.channel]  = (ch[r.channel]  || 0) + r.amount;
+      st[r.state]    = (st[r.state]    || 0) + r.amount;
+      ct[r.custType] = (ct[r.custType] || 0) + 1;
+      ctSales[r.custType] = (ctSales[r.custType]||0) + r.amount;
+    }
+    for (const r of (IDX_ADS[k] || [])) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      spend    += r.spend;
+      spendSST += r.spendSST;
+      msgs     += r.msgs;
+    }
+  });
+
+  return {sales, orders, spend, spendSST, msgs, ch, st, ct, daily, tgt, proj};
+}
+
+// ─── MoM COMPARISON HELPERS ──────────────────────────────────────────────────
+// Lightweight totals for an arbitrary ts range (no breakdowns)
+function aggRange(fromTs, toTs, keys) {
+  let sales=0, orders=0, spend=0, spendSST=0, msgs=0;
+  keys.forEach(k => {
+    for (const r of (IDX[k] || [])) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      sales += r.amount; orders++;
+    }
+    for (const r of (IDX_ADS[k] || [])) {
+      if (r.ts < fromTs || r.ts > toTs) continue;
+      spend += r.spend; spendSST += r.spendSST; msgs += r.msgs;
+    }
+  });
+  return {sales, orders, spend, spendSST, msgs};
+}
+
+// Shift a YYYY-MM-DD string back one month (clamped to month length)
+function shiftMonthBack(s) {
+  const y = +s.slice(0,4), m = +s.slice(5,7)-1, d = +s.slice(8,10);
+  const pm = m - 1 < 0 ? 11 : m - 1;
+  const py = m - 1 < 0 ? y - 1 : y;
+  const maxD = new Date(py, pm + 1, 0).getDate();
+  return localDateStr(new Date(py, pm, Math.min(d, maxD)));
+}
+
+// Build a MoM badge: cur vs prev. invert=true → lower is better (costs)
+function momBadge(cur, prev, invert) {
+  if (!isFinite(prev) || prev === 0) return '';
+  const chg = (cur - prev) / prev * 100;
+  if (!isFinite(chg)) return '';
+  if (Math.abs(chg) < 0.05) return '<span class="mom-flat">— 0%</span>';
+  const up = chg > 0;
+  const good = invert ? !up : up;
+  const cls = good ? 'mom-up' : 'mom-down';
+  return '<span class="' + cls + '" title="vs last month same period">' + (up?'↑':'↓') + ' ' + Math.abs(chg).toFixed(1) + '%</span>';
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+let chart = null, pieChart = null, stateChart = null;
+let ctSales = {};
+
+function fRMK(v) {
+  if (v >= 1000000) return 'RM'+(v/1000000).toFixed(1)+'M';
+  if (v >= 1000) return 'RM'+(v/1000).toFixed(0)+'K';
+  return fRM(v);
+}
+
+function render() {
+  const d = agg();
+
+  // ── Previous month same period (for MoM badges) ──
+  const fromStr = $('df').value, toStr = $('dt').value;
+  let pv = null;
+  if (fromStr && toStr) {
+    const pFrom = shiftMonthBack(fromStr), pTo = shiftMonthBack(toStr);
+    pv = aggRange(dateStrToTs(pFrom), dateStrToTs(pTo), pKeys($('ps').value));
+  }
+
+  $('k1').textContent = fRM(d.sales);
+  $('k1s').textContent = d.orders + ' orders';
+  if($('scMsg')) $('scMsg').textContent = d.msgs.toLocaleString();
+  if($('scOrd')) $('scOrd').textContent = d.orders.toLocaleString();
+
+  const displaySpend = d.spendSST;
+  $('k2').textContent = displaySpend > 0 ? fRM(displaySpend) : 'RM0.00';
+  $('k2s').textContent = d.msgs + ' msgs';
+
+  const roas = d.spendSST > 0 ? d.sales / d.spendSST : 0;
+  $('k3').textContent = d.spendSST > 0 ? roas.toFixed(2) + 'x' : '—';
+  // ROAS traffic-light: ≥3 green · 2–3 amber · <2 red
+  $('k3').style.color = d.spendSST > 0 ? (roas >= 3 ? '#10b981' : roas >= 2 ? '#f59e0b' : '#ef4444') : '';
+
+  const aov = d.orders > 0 ? d.sales / d.orders : 0;
+  $('k4').textContent = fRM(aov);
+
+  const cpm = d.msgs > 0 ? d.spend / d.msgs : 0;
+  $('k5').textContent = d.msgs > 0 ? fRM(cpm) : '—';
+
+  const cvr = d.msgs > 0 ? d.orders / d.msgs * 100 : 0;
+  $('k6').textContent = d.msgs > 0 ? cvr.toFixed(1) + '%' : '—';
+
+  // ── MoM badges (vs last month same period) ──
+  if (pv) {
+    const pRoas = pv.spendSST > 0 ? pv.sales / pv.spendSST : 0;
+    const pAov  = pv.orders   > 0 ? pv.sales / pv.orders   : 0;
+    const pCpm  = pv.msgs     > 0 ? pv.spend / pv.msgs     : 0;
+    const pCvr  = pv.msgs     > 0 ? pv.orders / pv.msgs*100: 0;
+    if($('k1m')) $('k1m').innerHTML = momBadge(d.sales, pv.sales);
+    if($('k2m')) $('k2m').innerHTML = momBadge(d.spendSST, pv.spendSST, true);
+    if($('k3m')) $('k3m').innerHTML = momBadge(roas, pRoas);
+    if($('k4m')) $('k4m').innerHTML = momBadge(aov, pAov);
+    if($('k5m')) $('k5m').innerHTML = momBadge(cpm, pCpm, true);
+    if($('k6m')) $('k6m').innerHTML = momBadge(cvr, pCvr);
+    if($('k7m')) $('k7m').innerHTML = momBadge(d.msgs, pv.msgs);
+    if($('k8m')) $('k8m').innerHTML = momBadge(d.orders, pv.orders);
+  }
+
+  // ── Per-brand mini cards (All Projects view) ──
+  if ($('miniCards')) {
+    if (d.proj === 'all' && fromStr && toStr) {
+      const nowB = new Date();
+      const mFromB = dateStrToTs(localDateStr(new Date(nowB.getFullYear(), nowB.getMonth(), 1)));
+      const mToB   = dateStrToTs(localDateStr(nowB));
+      const fT = dateStrToTs(fromStr), tT = dateStrToTs(toStr);
+      const brands = [['omy','OXY MY'],['osg','OXY SG'],['fg','FLEXIGLO'],['mg','MULTIGRAINZ']];
+      $('miniCards').innerHTML = brands.map(function(b){
+        const k = b[0], name = b[1];
+        const s = aggRange(fT, tT, [k]);
+        const mtd = aggRange(mFromB, mToB, [k]).sales;
+        const tp = TGTS[k] ? mtd / TGTS[k] * 100 : 0;
+        const r = s.spendSST > 0 ? s.sales / s.spendSST : 0;
+        const rc = r >= 3 ? '#10b981' : r >= 2 ? '#f59e0b' : '#ef4444';
+        return '<div class="mini-card" onclick="jumpProj(\''+k+'\')" title="Click to view '+name+'">' +
+          '<div class="mc-name">'+name+'</div>' +
+          '<div class="mc-sales">'+fRMK(s.sales)+'</div>' +
+          '<div class="mc-row"><span>ROAS <b style="color:'+(s.spendSST>0?rc:'#A07850')+'">'+(s.spendSST>0?r.toFixed(2)+'x':'—')+'</b></span>' +
+          '<span>MTD <b style="color:'+(tp>=100?'#10b981':'#3D2B1F')+'">'+tp.toFixed(0)+'%</b></span></div>' +
+          '<div class="mc-bar"><div style="width:'+Math.min(tp,100)+'%"></div></div>' +
+        '</div>';
+      }).join('');
+      $('miniCards').style.display = 'grid';
+    } else {
+      $('miniCards').style.display = 'none';
+    }
+  }
+
+  const pct = d.tgt > 0 ? (d.sales / d.tgt * 100) : 0;
+  const gap = Math.max(0, d.tgt - d.sales);
+  const projName = {all:'ALL PROJECTS', fg:'FLEXIGLO', mg:'MULTIGRAINZ', omy:'OXY MY', osg:'OXY SG', oxy:'OXY TOTAL'}[d.proj];
+  $('tgtTitle').textContent = 'TARGET — ' + projName;
+  $('tgtPct').textContent = pct.toFixed(1) + '%';
+  $('tgtPct').style.color = pct >= 100 ? '#10b981' : '#f59e0b';
+  $('tgtFill').style.width = Math.min(pct, 100) + '%';
+  $('tgtAch').textContent = fRM(d.sales);
+  $('tgtOf').textContent  = fRM(d.tgt);
+  $('tgtGap').textContent = fRM(gap);
+  $('tgtStatus').textContent = pct >= 100 ? '✓ Achieved' : '';
+
+  if ($('esomVal')) {
+    const now = new Date();
+    const curY = now.getFullYear(), curM = now.getMonth();
+    const daysInMonth = new Date(curY, curM + 1, 0).getDate();
+    const dayOfMonth  = now.getDate();
+    const esomKeys = pKeys($('ps').value);
+    const curMonthFrom = dateStrToTs(localDateStr(new Date(curY, curM, 1)));
+    const curMonthTo   = dateStrToTs(localDateStr(new Date(curY, curM, dayOfMonth)));
+    let esomSales = 0;
+    esomKeys.forEach(k => {
+      for (const r of (IDX[k] || [])) {
+        if (r.ts >= curMonthFrom && r.ts <= curMonthTo) esomSales += r.amount;
+      }
+    });
+    const esom = dayOfMonth > 0 ? (esomSales / dayOfMonth) * daysInMonth : 0;
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $('esomMonth').textContent = monthNames[curM] + ' ' + curY;
+    $('esomVal').textContent   = fRM(esom);
+    // Green when projection clears target, amber otherwise
+    $('esomVal').style.color   = (d.tgt > 0 && esom >= d.tgt) ? '#10b981' : '#F5A800';
+    $('esomSub').textContent   = 'Day ' + dayOfMonth + ' of ' + daysInMonth + ' · ' + fRM(esomSales) + ' MTD';
+
+    // ── Pace indicator: expected MTD vs actual MTD ──
+    if ($('tgtPace') && $('paceMark')) {
+      const viewingThisMonth = $('df').value === localDateStr(new Date(curY, curM, 1));
+      if (d.tgt > 0 && viewingThisMonth) {
+        const pacePct   = dayOfMonth / daysInMonth * 100;
+        const expected  = d.tgt * dayOfMonth / daysInMonth;
+        const diff      = esomSales - expected;
+        $('paceMark').style.display = 'block';
+        $('paceMark').style.left = pacePct.toFixed(1) + '%';
+        $('paceMark').title = 'Expected by Day ' + dayOfMonth + ': ' + fRM(expected);
+        const tag = diff >= 0
+          ? '<span class="pace-tag pace-ahead" title="Expected ' + fRM(expected) + ' by today">🚀 Ahead ' + fRMK(diff) + '</span>'
+          : '<span class="pace-tag pace-behind" title="Expected ' + fRM(expected) + ' by today">🐢 Behind ' + fRMK(-diff) + '</span>';
+        $('tgtPace').innerHTML = tag;
+
+        // ── Streak: consecutive days (ending yesterday) ≥ daily optimum ──
+        if ($('tgtStreak')) {
+          const opt = d.tgt / daysInMonth;
+          const mDaily = {};
+          esomKeys.forEach(function(k){
+            for (const r of (IDX[k]||[])) {
+              if (r.ts >= curMonthFrom && r.ts <= curMonthTo) mDaily[r.date] = (mDaily[r.date]||0) + r.amount;
+            }
+          });
+          let streak = 0;
+          for (let dd = dayOfMonth - 1; dd >= 1; dd--) {
+            const ds = localDateStr(new Date(curY, curM, dd));
+            if ((mDaily[ds]||0) >= opt) streak++; else break;
+          }
+          $('tgtStreak').innerHTML = streak > 0
+            ? '<span class="pace-tag" style="background:rgba(245,168,0,.14);color:#b45309" title="Consecutive days hitting daily optimum ('+fRMK(opt)+'/day)">🔥 '+streak+'-day streak</span>'
+            : '';
+        }
+      } else {
+        $('paceMark').style.display = 'none';
+        $('tgtPace').innerHTML = '';
+        if ($('tgtStreak')) $('tgtStreak').innerHTML = '';
+      }
+    }
+  }
+
+  if ($('tgtDaily')) {
+    if (pct >= 100) {
+      $('tgtDaily').textContent = '✓ Done';
+    } else {
+      const today  = todayLocal();
+      const eom    = new Date(today.getFullYear(), today.getMonth()+1, 0);
+      const remaining = Math.max(1, Math.round((eom - today) / 86400000) + 1);
+      $('tgtDaily').textContent = fRM(gap / remaining) + '/day (' + remaining + ' days left)';
+    }
+  }
+
+  // Channel Leaderboard
+  const chSorted = Object.entries(d.ch).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const chMax = chSorted[0]?.[1] || 1;
+  const medals = ['🥇','🥈','🥉'];
+  const top3 = chSorted.slice(0,3);
+  const rest = chSorted.slice(3);
+  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+  let lbHtml = '<div class="lb-podium">';
+  podiumOrder.forEach(item => {
+    const rank = top3.indexOf(item);
+    lbHtml += `<div class="lb-pod-item"><div class="lb-medal">${medals[rank]}</div><div class="lb-pod-name">${item[0]}</div><div class="lb-pod-amt">${fRM(item[1])}</div></div>`;
+  });
+  lbHtml += '</div>';
+  if (rest.length) {
+    lbHtml += '<div class="lb-rest-list">';
+    rest.forEach((item,i) => {
+      const p = (item[1]/chMax*100).toFixed(1);
+      lbHtml += `<div class="lb-rest-row"><div class="lb-rest-top"><div class="lb-rest-left"><span class="lb-rest-rank">${i+4}</span><span class="lb-rest-name">${item[0]}</span></div><span class="lb-rest-amt">${fRM(item[1])}</span></div><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${p}%"></div></div></div>`;
+    });
+    lbHtml += '</div>';
+  }
+  $('bCh').innerHTML = chSorted.length ? lbHtml : '<div style="color:#A07850;font-size:11px">No data</div>';
+
+  // Pie chart
+  const ctEntries = Object.entries(d.ct).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const total = ctEntries.reduce((a,[,v])=>a+v,0);
+  const pieColors = ['#10b981','#F5A800','#a855f7','#f97316'];
+  if (pieChart) { pieChart.destroy(); pieChart = null; }
+  pieChart = new Chart($('pieChart').getContext('2d'), {
+    type: 'pie',
+    data: { labels: ctEntries.map(([k])=>k), datasets:[{ data: ctEntries.map(([,v])=>v), backgroundColor: pieColors.slice(0,ctEntries.length), borderWidth:0, hoverOffset:12 }] },
+    options:{ responsive:false, animation:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => { const name=ctx.label; const orders=ctx.parsed; const sales=ctSales[name]||0; const p=total>0?(orders/total*100).toFixed(1):0; return [`${name}: ${orders} orders (${p}%)`,`Sales: ${fRM(sales)}`]; }}}}}
+  });
+  $('pieLegend').innerHTML = ctEntries.map(([k,v],i) =>
+    `<div class="pie-leg-row"><span class="pie-dot" style="background:${pieColors[i]||'#888'}"></span><div><div class="pie-leg-name">${k}</div><div class="pie-leg-val">${v} orders<span class="pie-leg-pct">(${total>0?(v/total*100).toFixed(1):0}%)</span></div></div></div>`
+  ).join('');
+
+  // State chart
+  const stSorted = Object.entries(d.st).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const stH = Math.max(240, stSorted.length * 28 + 40);
+  $('stateWrap').style.height = stH + 'px';
+  if (stateChart) { stateChart.destroy(); stateChart = null; }
+  stateChart = new Chart($('stateChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels: stSorted.map(([k])=>k), datasets:[{ data: stSorted.map(([,v])=>v), backgroundColor:'rgba(245,168,0,0.55)', borderColor:'rgba(245,168,0,1)', borderWidth:1, borderRadius:3 }] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:false, indexAxis:'y', layout:{padding:{right:4}}, plugins:{legend:{display:false}, tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+fRM(ctx.parsed.x)}}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},callback:v=>v>=1000?'RM'+(v/1000).toFixed(0)+'K':'RM'+v}}, y:{grid:{display:false},ticks:{color:'#c8d6e5',font:{size:11}},afterFit:s=>{s.width=90;}} }}
+  });
+
+  // Daily/Monthly chart
+  const sortedDays = Object.keys(d.daily).sort();
+  const dayCount = sortedDays.length;
+  const useMonthly = dayCount > 45;
+  let labels, vals;
+  if (useMonthly) {
+    const monthly = {};
+    sortedDays.forEach(k => { const ym=k.slice(0,7); monthly[ym]=(monthly[ym]||0)+(d.daily[k]||0); });
+    const sortedMonths = Object.keys(monthly).sort();
+    labels = sortedMonths.map(ym => { const [y,m]=ym.split('-'); return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m]+' '+y.slice(2); });
+    vals = sortedMonths.map(ym => monthly[ym]);
+  } else {
+    labels = sortedDays.map(k => k.slice(5));
+    vals   = sortedDays.map(k => d.daily[k]||0);
+  }
+  $('chartTitle').textContent = useMonthly ? 'Monthly Sales Trend' : 'Daily Sales Trend';
+
+  // ── Best / Worst day (daily view only) ──
+  if ($('bestWorst')) {
+    if (!useMonthly && sortedDays.length > 1) {
+      let bK=null,bV=-1,wK=null,wV=Infinity;
+      sortedDays.forEach(function(k){ const v=d.daily[k]||0; if(v>bV){bV=v;bK=k;} if(v<wV){wV=v;wK=k;} });
+      $('bestWorst').innerHTML = '🏆 Best '+bK.slice(5).replace('-','/')+' · <b style="color:#10b981">'+fRMK(bV)+'</b>&ensp;·&ensp;🐌 Lowest '+wK.slice(5).replace('-','/')+' · <b style="color:#ef4444">'+fRMK(wV)+'</b>';
+    } else { $('bestWorst').innerHTML = ''; }
+  }
+  // ── Overlay: last month same period (dashed) + daily optimum line ──
+  let prevVals = [], optVals = [];
+  if (!useMonthly && sortedDays.length) {
+    const pF = dateStrToTs(shiftMonthBack(sortedDays[0]));
+    const pT = dateStrToTs(shiftMonthBack(sortedDays[sortedDays.length-1]));
+    const prevDaily = {};
+    pKeys($('ps').value).forEach(function(k){
+      for (const r of (IDX[k]||[])) {
+        if (r.ts < pF || r.ts > pT) continue;
+        prevDaily[r.date] = (prevDaily[r.date]||0) + r.amount;
+      }
+    });
+    prevVals = sortedDays.map(function(k){ return prevDaily[shiftMonthBack(k)] || 0; });
+    const nowC = new Date();
+    const dimC = new Date(nowC.getFullYear(), nowC.getMonth()+1, 0).getDate();
+    const isThisMonthC = $('df').value === localDateStr(new Date(nowC.getFullYear(), nowC.getMonth(), 1));
+    if (isThisMonthC && d.tgt > 0) {
+      const opt = d.tgt / dimC;
+      optVals = sortedDays.map(function(){ return opt; });
+    }
+  }
+  const dsets = [{ type:'bar', label:'Sales', data:vals, backgroundColor:'rgba(245,168,0,0.5)', borderColor:'rgba(245,168,0,0.9)', borderWidth:1, borderRadius:3, barPercentage:useMonthly?0.5:0.7, order:3 }];
+  if (prevVals.some(function(v){return v>0;})) dsets.push({ type:'line', label:'Last Month', data:prevVals, borderColor:'rgba(160,120,80,0.55)', borderWidth:1.5, borderDash:[5,4], pointRadius:0, tension:.3, order:2 });
+  if (optVals.length) dsets.push({ type:'line', label:'Daily Optimum', data:optVals, borderColor:'rgba(168,85,247,0.65)', borderWidth:1.5, borderDash:[2,3], pointRadius:0, order:1 });
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets = dsets;
+    chart.options.plugins.legend.display = dsets.length > 1;
+    chart.update('none');
+  }
+  else {
+    chart = new Chart($('dc').getContext('2d'), {
+      type:'bar',
+      data:{ labels, datasets:dsets },
+      options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:dsets.length>1,position:'top',align:'end',labels:{boxWidth:14,boxHeight:8,font:{size:10},color:'#A07850'}}, tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+(ctx.dataset.label||'')+': '+fRM(ctx.parsed.y)}}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},maxRotation:45}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8899aa',font:{size:10},callback:v=>v>=1000?'RM'+(v/1000).toFixed(0)+'K':'RM'+v}} }}
+    });
+  }
+}
+
+// ─── DATE PRESETS ─────────────────────────────────────────────────────────────
+let _renderTimer = null;
+function debouncedRender() { clearTimeout(_renderTimer); _renderTimer = setTimeout(render, 80); }
+
+function setRange(p, btn) {
+  const t=todayLocal(), y=t.getFullYear(), m=t.getMonth(), d=t.getDate();
+  let s, e;
+  switch(p){
+    case 'today':     s=e=new Date(y,m,d); break;
+    case 'yesterday': s=e=new Date(y,m,d-1); break;
+    case '7d':        s=new Date(y,m,d-6); e=new Date(y,m,d); break;
+    case 'thisWeek':  { const w=t.getDay()||7; s=new Date(y,m,d-w+1); e=new Date(y,m,d); } break;
+    case 'thisMonth': s=new Date(y,m,1); e=new Date(y,m,d); break;
+    case 'lastMonth': s=new Date(y,m-1,1); e=new Date(y,m,0); break;
+    case 'ytd':       s=new Date(y,0,1); e=new Date(y,m,d); break;
+  }
+  $('df').value = localDateStr(s);
+  $('dt').value = localDateStr(e);
+  document.querySelectorAll('.dp').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  render();
+}
+
+function updateTarget() {
+  const p = $('ps').value;
+  $('tgtIn').value = TGTS[p] || 560000;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.dp').forEach(b => { b.addEventListener('click', e => setRange(b.dataset.p, b)); });
+$('ps').addEventListener('change', () => { updateTarget(); render(); });
+function jumpProj(k){ $('ps').value = k; $('ps').dispatchEvent(new Event('change')); }
+
+// ─── WHATSAPP DAILY REPORT ───────────────────────────────────────────────────
+function copyWAReport() {
+  const now = new Date();
+  // Follows selected project AND selected date range
+  const proj = $('ps').value;
+  const fromStr = $('df').value || localDateStr(now);
+  const toStr   = $('dt').value || localDateStr(now);
+  const fT = dateStrToTs(fromStr), tT = dateStrToTs(toStr);
+  // Month context based on the "to" date's month
+  const tY = +toStr.slice(0,4), tM = +toStr.slice(5,7)-1;
+  const mFrom = dateStrToTs(localDateStr(new Date(tY, tM, 1)));
+  const isCurMonth = tY === now.getFullYear() && tM === now.getMonth();
+  const mLabel = isCurMonth ? 'MTD' : (['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][tM] + ' Total');
+  const names = {omy:'OXY MY', osg:'OXY SG', fg:'FLEXIGLO', mg:'MULTIGRAINZ'};
+  const projLabel = {all:'ALL PROJECTS', oxy:'OXY TOTAL', fg:'FLEXIGLO', mg:'MULTIGRAINZ', omy:'OXY MY', osg:'OXY SG'}[proj];
+  const keys = pKeys(proj);
+  let lines = [], totRange = 0, totMonth = 0;
+  keys.forEach(function(k){
+    const name = names[k];
+    const s = aggRange(fT, tT, [k]);
+    const m = aggRange(mFrom, tT, [k]);
+    totRange += s.sales; totMonth += m.sales;
+    const r = s.spendSST > 0 ? (s.sales / s.spendSST).toFixed(2) + 'x' : '—';
+    const mPct = TGTS[k] ? (m.sales / TGTS[k] * 100).toFixed(0) + '%' : '—';
+    lines.push('▪️ ' + name + ': ' + fRM(s.sales) + ' | ROAS ' + r + ' | ' + s.msgs + ' msgs | ' + mLabel + ' ' + mPct);
+  });
+  const fmtD = function(s){ return s.slice(8,10) + '/' + s.slice(5,7) + '/' + s.slice(0,4); };
+  const dateLabel = fromStr === toStr ? fmtD(fromStr) : fmtD(fromStr) + ' → ' + fmtD(toStr);
+  const hh = String(now.getHours()).padStart(2,'0'), mi = String(now.getMinutes()).padStart(2,'0');
+  const pTgt = TGTS[proj] || 0;
+  let txt = '📊 ' + projLabel + ' Report — ' + dateLabel + ' (' + hh + ':' + mi + ')\n' +
+    '━━━━━━━━━━━━━━\n' + lines.join('\n') + '\n━━━━━━━━━━━━━━\n';
+  if (keys.length > 1) txt += '💰 Total: ' + fRM(totRange) + '\n';
+  txt += '📈 ' + mLabel + ': ' + fRM(totMonth) + ' / ' + fRM(pTgt) + ' (' + (pTgt ? (totMonth/pTgt*100).toFixed(1) : '0') + '%)';
+  function done(){ const b=$('waBtn'); const o=b.innerHTML; b.innerHTML='✅ Copied!'; setTimeout(function(){b.innerHTML=o;},1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(function(){ window.prompt('Copy this:', txt); });
+  } else { window.prompt('Copy this:', txt); }
+}
+$('df').addEventListener('change', debouncedRender);
+$('dt').addEventListener('change', debouncedRender);
+$('tgtIn').addEventListener('change', debouncedRender);
+
+(function init() {
+  const t = todayLocal(), y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
+  $('df').value = localDateStr(new Date(y,m,1));
+  $('dt').value = localDateStr(new Date(y,m,d));
+  updateTarget();
+  fetchData();
+  // Auto-refresh every 10 minutes (uses backend cache — light request)
+  setInterval(function(){ fetchData(false); }, 10*60*1000);
+})();
+
+// ─── TAB SWITCHING ───────────────────────────────────────────────────────────
+function switchTab(tab, event) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tab + 'Tab').classList.add('active');
+  if (event && event.target) event.target.classList.add('active');
+  if (tab === 'crm' && !window._crmLoaded) loadCRM();
+  if (tab === 'crm') loadCSActivity();
+}
+
+// ─── CRM DASHBOARD ───────────────────────────────────────────────────────────
+let crmTierChart;
+let _csPeriod = 'today';
+
+function setCSPeriod(period, btn) {
+  _csPeriod = period;
+  document.querySelectorAll('.cs-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const customRange = document.getElementById('csCustomRange');
+  if (period === 'custom') {
+    customRange.classList.add('show');
+    const today = new Date(), week = new Date(today);
+    week.setDate(today.getDate() - 6);
+    document.getElementById('csFrom').value = week.toISOString().slice(0,10);
+    document.getElementById('csTo').value   = today.toISOString().slice(0,10);
+  } else {
+    customRange.classList.remove('show');
+    loadCSActivity();
+  }
+}
+
+function getCSDateRange() {
+  const now = new Date(), today = now.toISOString().slice(0,10);
+  if (_csPeriod === 'today') return { from: today, to: today };
+  if (_csPeriod === 'week') {
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay() + (now.getDay()===0?-6:1));
+    return { from: start.toISOString().slice(0,10), to: today };
+  }
+  if (_csPeriod === 'month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: start.toISOString().slice(0,10), to: today };
+  }
+  if (_csPeriod === 'custom') {
+    return { from: document.getElementById('csFrom').value, to: document.getElementById('csTo').value };
+  }
+  return { from: today, to: today };
+}
+
+async function loadCSActivity() {
+  document.getElementById('csContacted').textContent = '…';
+  document.getElementById('csCalled').textContent    = '…';
+  document.getElementById('csTotal').textContent     = '…';
+  try {
+    const { from, to } = getCSDateRange();
+    const country = document.getElementById('crmCountry').value;
+    const csBase = getActiveCRMApi();
+    let url = csBase + '?action=cs_activity&t=' + Date.now();
+    if (from) url += '&from=' + from;
+    if (to)   url += '&to='   + to;
+    if (country && country !== 'FG') url += '&country=' + country;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('csContacted').textContent = data.contacted.toLocaleString();
+    document.getElementById('csCalled').textContent    = data.called.toLocaleString();
+    document.getElementById('csTotal').textContent     = data.total.toLocaleString();
+    document.getElementById('csLastUpdated').textContent = 'Updated ' + data.lastUpdated;
+
+    const donutCtx = document.getElementById('csDonut').getContext('2d');
+    if (window._csDonut) window._csDonut.destroy();
+    if (data.contacted > 0 || data.called > 0) {
+      window._csDonut = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: { labels: ['Contacted (WA)', 'Called (Phone)'], datasets: [{ data: [data.contacted, data.called], backgroundColor: ['#F5A800','#8b5cf6'], borderWidth: 2 }] },
+        options: { responsive:false, plugins:{ legend:{display:false} }, cutout:'62%' }
+      });
+      const pct = data.total > 0 ? Math.round(data.contacted/data.total*100) : 0;
+      document.getElementById('csDonutLabel').innerHTML = '<b style="font-size:13px;color:#F5A800">' + pct + '%</b><br>WA';
+    } else {
+      document.getElementById('csDonutLabel').innerHTML = '<span style="font-size:11px;color:#A07850">No data</span>';
+    }
+  } catch(e) {
+    document.getElementById('csContacted').textContent = 'Err';
+    document.getElementById('csLastUpdated').textContent = e.message;
+  }
+}
+
+async function loadCRM() {
+  const el = document.getElementById('crmUpdated');
+  el.textContent = 'Loading...';
+  try {
+    const country = document.getElementById('crmCountry').value;
+    const apiBase = getActiveCRMApi();
+    let url = apiBase + '?action=kpi&t=' + Date.now();
+    if (country && country !== 'FG') url += '&country=' + country;
+    const res = await fetch(url);
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    window._crmLoaded = true;
+    renderCRM(d);
+  } catch(e) {
+    document.getElementById('crmUpdated').textContent = 'Error: ' + e.message;
+  }
+}
+
+function fCRMK(v) {
+  if (v >= 1000000) return 'RM' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000)    return 'RM' + (v/1000).toFixed(0) + 'K';
+  return 'RM' + Math.round(v);
+}
+
+function renderCRM(d) {
+  const o = d.overview;
+  const lbl = d.country==='FG' ? '💪 FlexiGlo' : d.country==='MY' ? '🇲🇾 Oxy MY' : d.country==='SG' ? '🇸🇬 Oxy SG' : '🌏 All (MY+SG)';
+  document.getElementById('crmUpdated').textContent = lbl + ' · Last updated: ' + d.lastUpdated;
+
+  const trendNow   = (d.monthlyTrend || []).slice(-1)[0];
+  const supplyRate = trendNow ? (trendNow.supplyRate || 0) : 0;
+  const mtdRepeat  = trendNow ? trendNow.repeat  : 0;
+  const prev2New   = trendNow ? (trendNow.prev2New || 0) : 0;
+  document.getElementById('snapRepeatRate').textContent = supplyRate + '%';
+  document.getElementById('snapRepeatSub').textContent  = mtdRepeat + ' repeat ÷ ' + prev2New + ' new (2 months ago)';
+
+  const atRiskCount = o.atRiskCustomers || 0;
+  const atRiskRev   = o.atRiskRevenue  || 0;
+  const atRiskAvg   = atRiskCount > 0 ? Math.round(atRiskRev / atRiskCount) : 0;
+  document.getElementById('snapAtRisk').textContent    = atRiskCount.toLocaleString();
+  document.getElementById('snapAtRiskAvg').textContent = atRiskAvg > 0 ? '· RM' + atRiskAvg.toLocaleString() + '/cust' : '';
+  document.getElementById('snapAtRiskSub').textContent = fCRMK(atRiskRev) + ' total · avg RM' + atRiskAvg.toLocaleString() + ' per customer';
+  document.getElementById('snapACV').textContent = 'RM ' + (o.avgCustomerValue || 0).toLocaleString();
+
+  document.getElementById('hRepeat').textContent    = (o.repeatRate || 0) + '%';
+  document.getElementById('hRepeatSub').textContent = (o.repeatOrders || 0) + ' / ' + (o.totalOrders || 0) + ' orders';
+  document.getElementById('hActive').textContent    = (o.activeCustomers || 0).toLocaleString();
+  document.getElementById('hActiveSub').textContent = o.totalCustomers > 0 ? Math.round(o.activeCustomers/o.totalCustomers*100) + '% of ' + o.totalCustomers.toLocaleString() : '';
+  document.getElementById('hRisk').textContent    = (o.atRiskCustomers || 0).toLocaleString();
+  document.getElementById('hChurned').textContent = (o.churnedCustomers || 0).toLocaleString();
+
+  // Journey Funnel
+  const stages = d.journeyStages || {};
+  const funnelDef = [
+    {key:'NEW-TRANSIT', lbl:'TRANSIT',   color:'#6366f1'},
+    {key:'NEW-T1',      lbl:'T1',        color:'#3b82f6'},
+    {key:'NEW-T2',      lbl:'T2',        color:'#0ea5e9'},
+    {key:'NEW-T3',      lbl:'T3',        color:'#06b6d4'},
+    {key:'NEW-T4',      lbl:'T4',        color:'#10b981'},
+    {key:'NEW-T5',      lbl:'T5 Refill', color:'#f59e0b'},
+    {key:'NEW-T6',      lbl:'T6 Refill', color:'#f97316'},
+    {key:'NEW-T7',      lbl:'T7 Final',  color:'#ef4444'},
+  ];
+  const maxF = Math.max(1, ...funnelDef.map(s => stages[s.key] || 0));
+  let fh = '';
+  funnelDef.forEach((s, i) => {
+    const v = stages[s.key] || 0;
+    const w = Math.max(8, Math.round(v / maxF * 100));
+    fh += '<div class="funnel-row"><div class="funnel-lbl">' + s.lbl + '</div><div class="funnel-track"><div class="funnel-fill" style="width:' + w + '%;background:' + s.color + '"><span>' + v + '</span></div></div></div>';
+    if (i < funnelDef.length - 1) fh += '<div class="funnel-arrow">↓</div>';
+  });
+  fh += '<div class="funnel-arrow" style="color:#ef4444;font-weight:700;margin-top:6px">⚠️ AT-RISK: ' + (stages['AT-RISK'] || 0) + ' · CHURNED: ' + (stages['CHURNED'] || 0) + '</div>';
+  document.getElementById('crmFunnel').innerHTML = fh;
+
+  // Tier Donut
+  const tierColors = {Bronze:'#CD7F32', Silver:'#A8A9AD', Gold:'#D4951B', Platinum:'#7B68EE', Diamond:'#5BC8FF'};
+  const tierData   = d.tierDistribution || {};
+  const tierLabels = Object.keys(tierData);
+  if (crmTierChart) crmTierChart.destroy();
+  crmTierChart = new Chart(document.getElementById('crmTierChart'), {
+    type: 'doughnut',
+    data: { labels: tierLabels, datasets: [{ data: tierLabels.map(k => tierData[k]), backgroundColor: tierLabels.map(k => tierColors[k] || '#ccc'), borderWidth: 2 }] },
+    options: { responsive: false, plugins: { legend: { display: false } }, cutout: '60%' }
+  });
+  document.getElementById('crmTierLegend').innerHTML = tierLabels.filter(k => tierData[k] > 0).map(k =>
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
+    '<div style="width:10px;height:10px;border-radius:3px;background:' + tierColors[k] + '"></div>' +
+    '<span style="font-size:11px;color:#5C4033;min-width:55px">' + k + '</span>' +
+    '<b style="font-size:13px;color:#3D2B1F;min-width:32px">' + tierData[k] + '</b>' +
+    '<span style="font-size:10px;color:#A07850">' + (o.totalCustomers > 0 ? Math.round(tierData[k]/o.totalCustomers*100) : 0) + '%</span>' +
+    '</div>'
+  ).join('');
+
+  // Tier upgrade bars
+  const tierUpgradeDef = [
+    { from:'Bronze', to:'Silver',   threshold:1000, color:'#CD7F32' },
+    { from:'Silver', to:'Gold',     threshold:2000, color:'#A8A9AD' },
+    { from:'Gold',   to:'Platinum', threshold:3000, color:'#D4951B' },
+  ];
+  document.getElementById('tierUpgradeBars').innerHTML = tierUpgradeDef.map(t => {
+    const count = tierData[t.from] || 0;
+    if (count === 0) return '';
+    const pct = Math.min(100, Math.round(count / (o.totalCustomers||1) * 100));
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;color:#5C4033;font-weight:600">' + t.from + ' → ' + t.to + '</span><span style="font-size:10px;color:#A07850">' + count + ' customers</span></div><div style="height:6px;background:#F5E6C8;border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + t.color + ';border-radius:3px"></div></div></div>';
+  }).join('');
+
+  // Tier insight
+  const bronzeCount = tierData['Bronze'] || 0;
+  const bronzePct2  = o.totalCustomers > 0 ? Math.round(bronzeCount/o.totalCustomers*100) : 0;
+  const nearSilverCount = (d.bronzeTopList||[]).filter(c => c.gapToSilver <= 100).length;
+  document.getElementById('tierInsight').textContent = nearSilverCount > 0
+    ? '🎯 ' + nearSilverCount + ' Bronze customers within RM100 of Silver — priority upgrade targets'
+    : bronzePct2 > 80
+      ? '⚠️ ' + bronzePct2 + '% customers still Bronze — Silver upgrade campaign needed'
+      : '✅ Tier mix healthy · ' + (tierData['Silver']||0) + ' Silver customers driving repeat revenue';
+
+  // Bronze Banner
+  document.getElementById('bronzePct').textContent = bronzePct2 + '%';
+  document.getElementById('bronzeDesc').textContent = bronzeCount + ' 客户在 Bronze 层 · Silver 门槛 RM1,000';
+
+  // Today's Actions
+  const refillTotal = (stages['NEW-T5']||0)+(stages['NEW-T6']||0)+(stages['NEW-T7']||0);
+  const atRiskTotal = stages['AT-RISK'] || 0;
+  document.getElementById('refillCount').textContent  = Math.min(refillTotal, 70).toString();
+  document.getElementById('atRiskCount2').textContent = Math.min(atRiskTotal, 30).toString();
+
+  // Monthly Trend
+  const trendEl  = document.getElementById('trendBars');
+  const trendArr = d.monthlyTrend || [];
+  if (trendArr.length > 0) {
+    const r1vals = trendArr.map(m => m.rate || 0);
+    const r2vals = trendArr.map(m => Math.min(m.supplyRate || 0, 100));
+    const maxR   = Math.max(1, ...r1vals, ...r2vals);
+    const BAR_H  = 38;
+    trendEl.style.cssText = 'display:block;height:auto';
+    trendEl.innerHTML =
+      '<div style="display:flex;gap:10px;margin-bottom:6px">' +
+        '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981"></span>Standard</span>' +
+        '<span style="font-size:9px;color:#A07850;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3b82f6"></span>Supply-Adj</span>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px;align-items:flex-end">' +
+        trendArr.map(m => {
+          const r1 = m.rate || 0, r2 = m.supplyRate || 0;
+          const noData = !m.prev2New || m.prev2New === 0;
+          const over100 = r2 > 100;
+          const h1 = r1 === 0 ? 2 : Math.max(5, Math.round(r1 / maxR * BAR_H));
+          const h2 = noData ? 2 : over100 ? BAR_H : r2 === 0 ? 2 : Math.max(5, Math.round(r2 / maxR * BAR_H));
+          const col2 = noData ? '#ddd' : over100 ? '#f59e0b' : '#3b82f6';
+          const lbl1 = r1 === 0 ? '' : '<div style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:7px;font-weight:700;color:rgba(255,255,255,0.95)">' + r1 + '%</div>';
+          const lbl2 = noData || r2 === 0 ? '' : '<div style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:7px;font-weight:700;color:rgba(255,255,255,0.95)">' + (over100 ? r2+'%↑' : r2+'%') + '</div>';
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center">' +
+            '<div style="display:flex;gap:2px;align-items:flex-end;height:' + BAR_H + 'px;width:100%">' +
+              '<div style="flex:1;height:' + h1 + 'px;background:#10b981;border-radius:2px 2px 0 0;position:relative;min-height:' + (r1?'14':'2') + 'px">' + lbl1 + '</div>' +
+              '<div style="flex:1;height:' + h2 + 'px;background:' + col2 + ';border-radius:2px 2px 0 0;position:relative;opacity:' + (noData?0.2:1) + ';min-height:' + (noData||r2===0?'2':'14') + 'px">' + lbl2 + '</div>' +
+            '</div>' +
+            '<div style="font-size:9px;color:#A07850;text-align:center;white-space:nowrap;margin-top:3px">' + m.month + '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+  } else {
+    trendEl.innerHTML = '<div style="color:#A07850;font-size:11px">No trend data</div>';
+  }
+
+  // Retention Funnel
+  const cohort = d.purchaseCohort || {};
+  const c1=cohort.first||0, c2=cohort.second||0, c3=cohort.third||0, c4=cohort.fourPlus||0;
+  const ctotal = c1+c2+c3+c4;
+  document.getElementById('rf1').textContent = c1.toLocaleString();
+  document.getElementById('rf2').textContent = c2.toLocaleString();
+  document.getElementById('rf3').textContent = c3.toLocaleString();
+  document.getElementById('rf4plus').textContent = c4.toLocaleString();
+  const pct2=ctotal>0?Math.round(c2/ctotal*100):0, pct3=ctotal>0?Math.round(c3/ctotal*100):0, pct4=ctotal>0?Math.round(c4/ctotal*100):0;
+  document.getElementById('rf2pct').textContent = pct2+'% of all'; document.getElementById('rf2pct').className='rs-pct'+(pct2>=20?' good':'');
+  document.getElementById('rf3pct').textContent = pct3+'% of all'; document.getElementById('rf3pct').className='rs-pct'+(pct3>=15?' good':'');
+  document.getElementById('rf4pct').textContent = pct4+'% loyal'; document.getElementById('rf4pct').className='rs-pct good';
+  const drop12 = c1>0?Math.round((c1-c2)/c1*100):0;
+  document.getElementById('retFunnelNote').textContent = 'Total ' + ctotal.toLocaleString() + ' customers · ' + drop12 + '% drop-off after 1st purchase';
+
+  // Tier Growth
+  document.getElementById('tgRevenue').textContent    = fCRMK(o.totalRevenue || 0);
+  document.getElementById('tgACV').textContent        = 'RM ' + (o.avgCustomerValue || 0).toLocaleString();
+  document.getElementById('tgTotal').textContent      = (o.totalCustomers || 0).toLocaleString() + ' customers';
+  document.getElementById('tgChurnedRev').textContent = fCRMK(o.churnedRevenue || 0) + ' recoverable';
+
+  const bronzeTopList = d.bronzeTopList || [];
+  document.getElementById('tgNearSilver').innerHTML = bronzeTopList.length
+    ? bronzeTopList.map(c => {
+        const gap = Math.round(c.gapToSilver || 0);
+        const gapTxt = gap === 0 ? '✓ Ready!' : 'RM' + gap.toLocaleString() + ' to Silver';
+        const bg = gap === 0 ? '#10b981' : gap <= 200 ? '#f59e0b' : '#A07850';
+        return '<div class="near-row"><div class="near-name">' + c.name + '</div><span class="near-badge" style="background:' + bg + '">' + gapTxt + '</span></div>';
+      }).join('')
+    : '<div style="color:#A07850;font-size:11px;padding:8px 0">No Bronze customers found</div>';
+
+  // Bars
+  const jBarColors = {'NEW-TRANSIT':'#6366f1','NEW-T1':'#3b82f6','NEW-T2':'#0ea5e9','NEW-T3':'#06b6d4','NEW-T4':'#10b981','NEW-T5':'#f59e0b','NEW-T6':'#f97316','NEW-T7':'#ef4444','AT-RISK':'#d97706','CHURNED':'#dc2626'};
+  renderCRMBars('tgJourneyBars',  d.journeyStages,       null,     12, jBarColors);
+  renderCRMBars('crmChannelBars', d.channelDistribution, '#F5A800', 8, null);
+  renderCRMBars('crmStateBars',   d.stateDistribution,   '#3b82f6',10, null);
+
+  // Top 10
+  document.getElementById('crmTopTable').innerHTML = (d.topCustomers || []).map((c, i) =>
+    '<tr><td style="color:#A07850">' + (i+1) + '</td>' +
+    '<td style="font-weight:600;color:#3D2B1F">' + c.name + '</td>' +
+    '<td style="text-align:right;color:#5C4033">' + c.orders + '</td>' +
+    '<td style="text-align:right;font-weight:700;color:#F5A800">RM ' + c.spent.toLocaleString() + '</td>' +
+    '<td style="font-size:11px">' + c.tier + '</td></tr>'
+  ).join('');
+}
+
+function renderCRMBars(id, data, defaultColor, max, colorMap) {
+  const entries = Object.entries(data || {}).sort((a, b) => b[1] - a[1]).slice(0, max);
+  const maxVal  = Math.max(1, ...entries.map(e => e[1]));
+  document.getElementById(id).innerHTML = entries.map(([k, v]) => {
+    const color = (colorMap && colorMap[k]) ? colorMap[k] : (defaultColor || '#10b981');
+    const w = Math.max(8, Math.round(v / maxVal * 100));
+    return '<div class="crm-bar"><div class="crm-bar-label">' + k + '</div><div class="crm-bar-track"><div class="crm-bar-fill" style="width:' + w + '%;background:' + color + '"><span>' + v + '</span></div></div></div>';
+  }).join('');
+}
+</script>
+</body>
+</html>
